@@ -157,6 +157,8 @@ api.MapPut("/notes/{id:int}", async (int id, SoapInput input, ClinicalDb db, Htt
     var note = await db.Notes.FindAsync(id);
     if (note is null)
         return Results.NotFound();
+    if (note.Kind != "soap")
+        return Results.Conflict(new { error = "Only SOAP drafts can be edited." });
     if (note.Status != "Draft" || note.Version != input.Version)
         return Results.Conflict(new
         {

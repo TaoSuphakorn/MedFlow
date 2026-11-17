@@ -7,8 +7,8 @@ Verified locally on **17 November 2026 (Asia/Bangkok)** using Docker Desktop 28.
 | Check | Actual result |
 |---|---|
 | `docker compose up --build -d` | Pass; frontend and backend multi-stage images built and all three application services started |
-| `docker compose --profile test run --build --rm backend-tests` | **23 passed**, 0 failed |
-| `docker compose --profile test run --build --rm e2e` | **10 passed**, 0 failed in Chromium after the theme/localization update |
+| `docker compose --profile test run --build --rm backend-tests` | **25 passed**, 0 failed |
+| `docker compose --profile test run --build --rm e2e` | **11 passed**, 0 failed in Chromium after the Thai workflow follow-up |
 | `docker compose restart` followed by `docker compose up -d --wait` | All three application services healthy; database record fingerprint unchanged |
 | Fresh-volume startup using the optional acceptance override | Three users, 15 patients, 45 confirmed visits, one AI draft, one committed EF migration |
 | Frontend GET `http://localhost:3000` | HTTP 200 |
@@ -57,7 +57,7 @@ A fresh read-only reviewer checked the implementation. No critical findings were
 
 Request logs now omit query strings: Nginx logs method/path/status, and ASP.NET request diagnostics are filtered. Audit events intentionally retain only actions and internal identifiers.
 
-Deferred minor: the draft-edit API also accepts text edits to unapproved summary suggestions. The UI does not expose that edit path; the server still rejects clinical confirmation of summaries. This does not bypass doctor review or approve a record.
+Resolved minor: the draft-edit API now rejects attempts to edit summary suggestions as SOAP notes. Doctor and nurse regression cases verify HTTP 409 and unchanged summary text, version and status. Summary suggestions also remain ineligible for clinical confirmation.
 
 Real clinical accuracy, production deployment, formal accessibility conformance, healthcare certification and security compliance are not verified and are not claimed. The UI now supports Thai and English; clinical source content is kept in its recorded language. No remote repository or public deployment was created.
 
@@ -66,3 +66,9 @@ Real clinical accuracy, production deployment, formal accessibility conformance,
 The frontend has a new white/slate/teal clinical theme with larger text and controls. The humanizer pass replaced promotional headings with functional clinical labels. Thai and English cover navigation, login, patient tables, SOAP controls, review labels, validation, dialogs and notifications. The language preference persists in browser storage; language changes preserve the active draft.
 
 The final browser suite passed **10/10** checks: six existing English workflow checks and four localization checks. These include language changes in save/confirmation notifications and date formatting when browser storage is blocked. Both issues were reproduced by failing tests before being fixed. Desktop Thai, desktop English, Thai login and Thai tablet screenshots were regenerated. The Docker frontend build passed; all three application services remain healthy. Backend source was unchanged by this update.
+
+## Thai demonstration workflow follow-up
+
+The backend suite now contains 25 cases. The two added cases failed against the previous summary-edit behavior, then passed after the SOAP edit endpoint was restricted by note kind. No migration was needed.
+
+The browser suite now contains 11 cases. The added Thai flow searches by a Thai patient name, generates a labeled deterministic AI draft, saves unique reviewed text, confirms as Doctor, reloads the record, switches language without translating clinical content, and verifies the Administrator audit row against the actual confirmed note ID. This prevents older audit events from satisfying the check.

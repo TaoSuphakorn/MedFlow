@@ -1,5 +1,7 @@
 # Five-minute recruiter walkthrough
 
+The interface opens in Thai. Use **EN** in the header to follow the English labels below, or choose **ไทย** for the Thai workflow. The language preference is remembered; clinical source text stays as recorded.
+
 1. Run `docker compose up --build -d`. Open [localhost:3000](http://localhost:3000). Images and dependencies download during the first build; no host runtimes are needed.
 2. Leave the Doctor role selected and use the prefilled demo credentials. The overview shows actual stored patient, confirmed-note and pending SOAP draft counts.
 3. Open **Patients**, search `SYN-1001` or `สมชาย`, and open Somchai Jaidee. Review bilingual demographics, synthetic history, allergies and the visit timeline.

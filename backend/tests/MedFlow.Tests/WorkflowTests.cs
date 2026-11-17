@@ -114,6 +114,22 @@ public class WorkflowTests : IClassFixture<WebApplicationFactory<Program>>
         var audit = await admin.GetFromJsonAsync<JsonElement>("/api/audit");
         Assert.Contains(audit.EnumerateArray(), a => a.GetProperty("action").GetString() == "request.failed.403");
     }
+    [Theory] [InlineData("doctor")] [InlineData("nurse")]
+    public async Task Summary_suggestions_cannot_be_modified_as_soap_notes(string role)
+    {
+        using var c = Client(); await Login(c, role); var id = await Patient(c);
+        var response = await c.PostAsJsonAsync($"/api/patients/{id}/ai", new { kind = "summary" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var original = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var noteId = original.GetProperty("id").GetInt32();
+        var update = await c.PutAsJsonAsync($"/api/notes/{noteId}", Note(1));
+        Assert.Equal(HttpStatusCode.Conflict, update.StatusCode);
+        var patient = await c.GetFromJsonAsync<JsonElement>($"/api/patients/{id}");
+        var stored = patient.GetProperty("notes").EnumerateArray().Single(n => n.GetProperty("id").GetInt32() == noteId);
+        Assert.Equal(original.GetProperty("subjective").GetString(), stored.GetProperty("subjective").GetString());
+        Assert.Equal(1, stored.GetProperty("version").GetInt32());
+        Assert.Equal("Draft", stored.GetProperty("status").GetString());
+    }
     [Fact] public async Task Valid_Thai_soap_at_field_limit_is_accepted()
     {
         using var c = Client(); await Login(c); var id = await Patient(c);

@@ -1,5 +1,56 @@
 import { test, expect } from '@playwright/test';
 
+test('Thai doctor workflow confirms an AI draft and administrator can inspect its audit', async ({
+  page,
+}) => {
+  const reviewedText = `ข้อมูลสมมติสำหรับทดสอบการตรวจทาน ${crypto.randomUUID()}`;
+  await page.goto('/');
+  await page.getByRole('button', { name: 'เข้าสู่พื้นที่ทำงาน' }).click();
+  await page.getByRole('button', { name: 'ผู้ป่วย', exact: true }).click();
+  await page.getByPlaceholder('ค้นหาชื่อ ชื่อภาษาไทย หรือรหัสผู้ป่วย…').fill('สมชาย');
+  await page.getByRole('button', { name: 'เปิด Somchai' }).click();
+  await expect(page.getByText('โหมด AI สาธิต', { exact: true }).last()).toBeVisible();
+  await expect(page.getByText('โหมด AI เชื่อมต่อจริง', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'สร้างร่าง SOAP' }).click();
+  await expect(page.getByRole('status')).toContainText('สร้างร่าง AI แล้ว');
+  await page.getByLabel('อาการและประวัติ (Subjective)', { exact: true }).fill(reviewedText);
+  await page.getByRole('button', { name: 'บันทึกฉบับร่าง', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('บันทึกฉบับร่างแล้ว');
+  await page
+    .getByLabel('ฉันได้ตรวจทานและแก้ไขบันทึกนี้แล้ว และรับผิดชอบต่อเนื้อหาที่บันทึก')
+    .check();
+  const [confirmation] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        /\/api\/notes\/\d+\/confirm$/.test(response.url()) &&
+        response.request().method() === 'POST',
+    ),
+    page.getByRole('button', { name: 'ยืนยันบันทึกการรักษา' }).click(),
+  ]);
+  expect(confirmation.status()).toBe(200);
+  const confirmedNote = await confirmation.json();
+  await expect(page.getByRole('status')).toContainText('ยืนยันบันทึกการรักษาแล้ว');
+  await page.reload();
+  await page.getByRole('button', { name: 'ผู้ป่วย', exact: true }).click();
+  await page.getByRole('button', { name: 'เปิด Somchai' }).click();
+  await expect(page.getByText(reviewedText, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'English', exact: true }).click();
+  await expect(page.getByText(reviewedText, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'ภาษาไทย', exact: true }).click();
+  await page.getByRole('button', { name: 'ออกจากระบบ' }).click();
+  await page.getByRole('button', { name: 'ผู้ดูแลระบบ', exact: true }).click();
+  await page.getByRole('button', { name: 'เข้าสู่พื้นที่ทำงาน' }).click();
+  await page.getByRole('button', { name: 'บันทึกกิจกรรม', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'บันทึกกิจกรรมในระบบ' })).toBeVisible();
+  const confirmationRow = page
+    .getByRole('row')
+    .filter({ hasText: 'note.confirmed' })
+    .filter({
+      has: page.locator('td:last-child', { hasText: new RegExp(`^${confirmedNote.id}$`) }),
+    });
+  await expect(confirmationRow).toHaveCount(1);
+});
+
 test('save and confirmation notifications follow the active language', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'เข้าสู่พื้นที่ทำงาน' }).click();

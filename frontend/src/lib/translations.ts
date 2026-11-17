@@ -304,6 +304,7 @@ export const thai: Record<string, string> = {
     'กรุณากรอก SOAP ทั้งสี่ส่วน แต่ละส่วนต้องไม่เกิน 8,000 ตัวอักษร',
   'Explicit clinician review is required.': 'ต้องรับรองการตรวจทานก่อนยืนยัน',
   'Only the current SOAP draft can be confirmed.': 'ยืนยันได้เฉพาะฉบับร่าง SOAP รุ่นปัจจุบัน',
+  'Only SOAP drafts can be edited.': 'แก้ไขได้เฉพาะฉบับร่าง SOAP เท่านั้น',
   'AI assistance is unavailable or returned invalid content. No suggestion was saved. Try again later.':
     'ไม่สามารถใช้ AI ได้หรือคำตอบไม่ผ่านการตรวจสอบ ระบบยังไม่ได้บันทึกข้อเสนอแนะ กรุณาลองใหม่ภายหลัง',
   'The request could not be completed.': 'ไม่สามารถดำเนินการตามคำขอได้',

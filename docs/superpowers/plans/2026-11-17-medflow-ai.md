@@ -36,4 +36,4 @@
 - Ruling: Retain E2E-created synthetic notes in the local demo, but require Demo AI Mode before generation and verify unique per-run text. This keeps the documented test command simple; cost is additional synthetic records after each run.
 - Ruling: No remote publication or merge; preserve the dedicated feature branch and local application. No remote was supplied.
 - Final review: independent reviewer found no critical issues. Important fixes verified RED→GREEN: unsaved navigation; administrator draft labels; 8,000-character Thai transport; metadata-only request logs; atomic creation/audit rollback. Backend suite 23/23 and browser suite 6/6.
-- Final minor (deferred): draft summary text can be edited through PUT, though the UI omits it and summary confirmation is blocked.
+- Final minor (resolved in demo follow-up): PUT now rejects draft summary edits; doctor/nurse tests verify the summary remains unchanged.

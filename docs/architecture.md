@@ -24,7 +24,7 @@ The `postgres-data` volume preserves data across restart, rebuild, and `compose 
 
 `User` stores PBKDF2 hashes from ASP.NET Identity's password hasher. `Patient` contains fictional bilingual demographics and history. `ClinicalNote` contains SOAP text, source type, AI mode, review metadata and a concurrency version. `AuditEvent` contains an action, timestamp and internal identifiers only.
 
-Original confirmed notes and unapproved AI suggestions are shown separately. Summary suggestions use `kind=summary`; they are never counted as pending SOAP notes and cannot be confirmed as clinical records. AI SOAP suggestions use `kind=soap`, remain drafts, and can be edited before confirmation.
+Original confirmed notes and unapproved AI suggestions are shown separately. Summary suggestions use `kind=summary`; they are never counted as pending SOAP notes and cannot be edited through the SOAP endpoint or confirmed as clinical records. AI SOAP suggestions use `kind=soap`, remain drafts, and can be edited before confirmation.
 
 ## Authentication and authorization
 
