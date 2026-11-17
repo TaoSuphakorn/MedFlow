@@ -128,6 +128,8 @@ tbody tr:hover { background: #f6faf7; }
 }
 .soap-section textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #e2f0e8; }
 .soap-section textarea:read-only { background: #f5f8f5; }
+/* Read-only drafts have no action footer to provide the final inset. */
+.editor-card form > .soap-section:last-child { padding-bottom: 24px; }
 .soap-letter { border-radius: 10px; background: #e6f1e9; color: #326e51; }
 .confirmation-area { background: #eef6ef; border-color: #d4e5d5; }
 .ai-panel { border-color: #d7e3df; }

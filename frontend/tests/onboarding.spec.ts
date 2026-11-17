@@ -9,6 +9,59 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test('administrator read-only draft keeps Plan inside the card padding', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Administrator', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await page.getByRole('button', { name: 'Skip guide' }).click();
+  await page.getByRole('button', { name: 'Patients', exact: true }).click();
+  await page.getByRole('button', { name: 'Open Somchai' }).click();
+  const picker = page.getByLabel('Open a saved draft');
+  await picker.selectOption((await picker.locator('option').nth(1).getAttribute('value'))!);
+  const plan = page.getByLabel('Plan', { exact: true });
+  await expect(plan).toHaveAttribute('readonly', '');
+  const fieldBox = (await plan.boundingBox())!;
+  const cardBox = (await page.locator('.editor-card').boundingBox())!;
+  expect(cardBox.y + cardBox.height - fieldBox.y - fieldBox.height).toBeGreaterThanOrEqual(24);
+  await plan.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'screenshots/readonly-soap-padding.png' });
+});
+
+for (const size of [{ width: 1286, height: 720 }, { width: 1024, height: 600 }, { width: 375, height: 700 }]) {
+  test(`${size.width}px SOAP step keeps popup and field visible without scroll drift`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+    await page.getByRole('button', { name: 'Skip guide' }).click();
+    if (size.width <= 800) await page.getByRole('button', { name: 'Open navigation' }).click();
+    await page.getByRole('button', { name: 'Patients', exact: true }).click();
+    await page.getByRole('button', { name: 'Open Somchai' }).click();
+    const input = page.getByLabel('Subjective', { exact: true });
+    await input.fill('Synthetic text retained after the tutorial');
+    if (size.width <= 800) await page.getByRole('button', { name: 'Open navigation' }).click();
+    await page.getByRole('button', { name: 'Help & demo guide' }).click();
+    await page.getByRole('button', { name: 'Restart walkthrough' }).click();
+    const guide = page.getByRole('dialog', { name: 'Interactive tutorial' });
+    await guide.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(guide.getByRole('button', { name: 'Start using MedFlow' })).toBeVisible();
+    await expect(guide).toBeInViewport({ ratio: 1 });
+    await expect(input).toBeInViewport({ ratio: 1 });
+    const scrolls = await page.evaluate(async () => {
+      const values: number[] = [];
+      for (let frame = 0; frame < 12; frame++) {
+        await new Promise(requestAnimationFrame); values.push(scrollY);
+      }
+      return values;
+    });
+    expect(Math.max(...scrolls) - Math.min(...scrolls)).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: `screenshots/tutorial-soap-${size.width}.png` });
+    await guide.getByRole('button', { name: 'Start using MedFlow' }).click();
+    await expect(input).toHaveValue('Synthetic text retained after the tutorial');
+    await expect(page.locator('.tour-layer')).toHaveCount(0);
+  });
+}
+
 for (const width of [375, 1024]) test(`${width}px: teaching popup stays beside its search target`, async ({ page }) => {
   await page.setViewportSize({ width, height: 1000 });
   await page.goto('/');

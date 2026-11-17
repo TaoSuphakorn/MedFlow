@@ -120,3 +120,9 @@ Eight focused tutorial cases passed again after strengthening empty-result recov
 Two regression cases reproduced a popup detached from its search target at 375px and 1024px with a tall viewport. The old fallback pinned it to the viewport bottom. The new placement helper chooses a region adjacent to the control, keeps viewport margins, constrains body height when necessary, and supplies a pointing arrow. Both cases check target separation, proximity, full popup visibility and recomputation after viewport height changes.
 
 The complete focused tutorial suite passed 10/10 in the disposable `medflow-position` project. It includes the existing real-click flow, role/draft replay, history-tab recovery, simulated keyboard viewport, retry and session expiry cases. Phone and tablet screenshots were inspected. Backend code was unchanged and its suite was not rerun for this frontend fix.
+
+## Read-only SOAP card spacing
+
+The reported Plan-field screenshot was checked against the user's Administrator workspace. A read-only draft has no save/confirmation footer, leaving its final textarea only 1px from the card edge. A regression test reproduced that inset before the fix. The final SOAP section now adds 24px bottom padding only when it is the last form child, leaving forms with existing footers unchanged.
+
+The focused browser suite passed 14/14 in `medflow-soap-layout`, including the Administrator's selected saved draft and SOAP tutorial visibility/scroll stability at 1286, 1024 and 375px. The corrected card screenshot was inspected. The CSS applies with the tutorial open or closed. No backend or clinical data changes were required.
