@@ -46,7 +46,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://frontend/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://frontend/frontend-health"]
       interval: 5s
       timeout: 3s
       retries: 20

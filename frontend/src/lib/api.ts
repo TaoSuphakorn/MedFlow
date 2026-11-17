@@ -1,4 +1,6 @@
+import { announceSessionChange } from './session-events';
 export type User = {
+  userId: number;
   name: string;
   role: 'Doctor' | 'Nurse' | 'Administrator';
   aiMode: 'Demo' | 'Live';
@@ -41,6 +43,9 @@ export type Patient = {
 };
 export type Soap = Pick<Note, 'subjective' | 'objective' | 'assessment' | 'plan'>;
 let token: string | undefined;
+export function resetCsrf() {
+  token = undefined;
+}
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -78,6 +83,8 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
               : 'Something went wrong. Please try again.'),
     );
   }
+  if (method === 'POST' && (path === '/auth/login' || path === '/auth/logout'))
+    announceSessionChange();
   return r.status === 204 ? (undefined as T) : r.json();
 }
 export const initials = (name: string) =>

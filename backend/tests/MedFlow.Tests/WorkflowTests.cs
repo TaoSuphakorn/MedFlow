@@ -34,6 +34,15 @@ public class WorkflowTests : IClassFixture<WebApplicationFactory<Program>>
         using var c = Client();
         Assert.Equal(HttpStatusCode.Unauthorized, (await c.GetAsync("/api/patients")).StatusCode);
     }
+    [Fact] public async Task Current_session_identifies_the_user_without_exposing_credentials()
+    {
+        using var c = Client(); await Login(c);
+        var session = await c.GetFromJsonAsync<JsonElement>("/api/auth/me");
+        Assert.True(session.TryGetProperty("userId", out var id));
+        Assert.True(id.GetInt32() > 0);
+        Assert.Equal("Doctor", session.GetProperty("role").GetString());
+        Assert.False(session.TryGetProperty("passwordHash", out _));
+    }
     [Fact] public async Task Invalid_credentials_rejected_and_csrf_required()
     {
         using var c = Client();

@@ -1,5 +1,6 @@
 import { LanguageSwitcher, useLanguage } from './lib/i18n';
-import { useState, useEffect } from 'react';
+import { useSessionSync } from './hooks/use-session-sync';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -182,22 +183,82 @@ export default function App() {
   const [help, setHelp] = useState(false);
   const [settings, setSettings] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const [compactNavigation, setCompactNavigation] = useState(
+    () => window.matchMedia('(max-width: 800px)').matches,
+  );
   const [shellDirty, setShellDirty] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<User>('/auth/me'), retry: false });
   const patients = useQuery({
     queryKey: ['patients'],
     queryFn: () => api<Patient[]>('/patients'),
     enabled: !!me.data,
   });
+  const sessionSync = useSessionSync(qc, () => {
+    setPatient(null);
+    setView('Overview');
+    setSearch('');
+    setToast('');
+    setShellDirty(false);
+    setPendingNavigation(null);
+    setHelp(false);
+    setSettings(false);
+    setMobile(false);
+  });
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 800px)');
+    const onChange = () => {
+      setCompactNavigation(media.matches);
+      if (!media.matches) setMobile(false);
+    };
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(''), 6000);
     return () => clearTimeout(t);
   }, [toast]);
+  useEffect(() => {
+    if (!mobile) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusable = () =>
+      Array.from(
+        sidebarRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]') || [],
+      ).filter((el) => el.getClientRects().length > 0);
+    focusable()[0]?.focus();
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobile(false);
+      }
+      if (event.key !== 'Tab') return;
+      const elements = focusable();
+      const first = elements[0],
+        last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKey);
+      previous?.focus();
+    };
+  }, [mobile]);
   function guardNavigation(action: () => void) {
-    if (shellDirty) setPendingNavigation(() => action);
-    else action();
+    if (shellDirty) {
+      setMobile(false);
+      setPendingNavigation(() => action);
+    } else action();
   }
   const navigate = (next: View) =>
     guardNavigation(() => {
@@ -215,6 +276,7 @@ export default function App() {
     });
   function logout() {
     guardNavigation(() => {
+      setMobile(false);
       void performLogout();
     });
   }
@@ -249,9 +311,37 @@ export default function App() {
     ...(user.role === 'Administrator' ? [{ name: 'Audit log' as View, icon: ShieldCheck }] : []),
   ];
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell ${sessionSync.checking || sessionSync.error ? 'session-checking' : ''}`}
+    >
+      {(sessionSync.checking || sessionSync.error) && (
+        <div className="session-check">
+          {sessionSync.error ? (
+            <ErrorState error={sessionSync.error} retry={sessionSync.retry} />
+          ) : (
+            <Loading />
+          )}
+        </div>
+      )}
       {mobile && <div className="sidebar-scrim" onClick={() => setMobile(false)} />}
-      <aside className={`sidebar ${mobile ? 'is-open' : ''}`}>
+      <aside
+        ref={sidebarRef}
+        id="workspace-navigation"
+        className={`sidebar ${mobile ? 'is-open' : ''}`}
+        role={mobile ? 'dialog' : undefined}
+        aria-modal={mobile || undefined}
+        aria-label={t('Main navigation')}
+        inert={compactNavigation && !mobile}
+        aria-hidden={compactNavigation && !mobile ? true : undefined}
+      >
+        <button
+          type="button"
+          className="sidebar-close"
+          aria-label={t('Close navigation')}
+          onClick={() => setMobile(false)}
+        >
+          <X size={20} />
+        </button>
         <Logo />
         <div className="workspace-label">{t('WORKSPACE')}</div>
         <nav>
@@ -283,11 +373,34 @@ export default function App() {
             {user.aiMode === 'Demo' ? t('Demo AI Mode') : t('Live AI Mode')}
           </span>
         </div>
-        <button className="nav-item" onClick={() => setSettings(true)}>
+        <a
+          className="nav-item"
+          href="/swagger/"
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => setMobile(false)}
+        >
+          <BookOpen size={19} />
+          <span>{t('API documentation')}</span>
+          <ArrowUpRight size={15} />
+        </a>
+        <button
+          className="nav-item"
+          onClick={() => {
+            setMobile(false);
+            setSettings(true);
+          }}
+        >
           <Settings2 size={19} />
           <span>{t('Workspace settings')}</span>
         </button>
-        <button className="nav-item" onClick={() => setHelp(true)}>
+        <button
+          className="nav-item"
+          onClick={() => {
+            setMobile(false);
+            setHelp(true);
+          }}
+        >
           <CircleHelp size={19} />
           <span>{t('Help & demo guide')}</span>
           <ArrowUpRight size={15} />
@@ -303,12 +416,14 @@ export default function App() {
           </button>
         </div>
       </aside>
-      <div className="main-shell">
+      <div className="main-shell" inert={mobile || sessionSync.checking || !!sessionSync.error}>
         <header className="topbar">
           <div className="breadcrumb">
             <button
               className="mobile-menu"
               aria-label={t('Open navigation')}
+              aria-expanded={mobile}
+              aria-controls="workspace-navigation"
               onClick={() => setMobile(true)}
             >
               <Menu size={21} />
@@ -788,17 +903,21 @@ function PatientTable({
                       </span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label={t('Patient ID')}>
                     <span className="patient-id">{p.identifier}</span>
                   </td>
-                  <td>
+                  <td data-label={t('Age / Sex')}>
                     <span className="age-sex">
                       {p.age} {' ' + t('yrs') + ' '}
                       <span>·</span> {t(p.gender === 'Male' ? 'M' : 'F')}
                     </span>
                   </td>
-                  {!compact && <td className="date-cell">{date(p.lastVisit, locale)}</td>}
-                  <td>
+                  {!compact && (
+                    <td className="date-cell" data-label={t('Last visit')}>
+                      {date(p.lastVisit, locale)}
+                    </td>
+                  )}
+                  <td data-label={draftsOnly ? t('Pending review') : t('Visit type')}>
                     <Badge
                       tone={
                         draftsOnly

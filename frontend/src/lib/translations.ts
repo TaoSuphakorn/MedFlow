@@ -1,5 +1,10 @@
 // Clinical source content is deliberately excluded from UI localization.
 export const thai: Record<string, string> = {
+  'Main navigation': 'เมนูหลัก',
+  'Close navigation': 'ปิดเมนู',
+  'API documentation': 'เอกสาร API',
+  'Audit events': 'รายการบันทึกกิจกรรม',
+  'Unable to verify your session.': 'ไม่สามารถตรวจสอบเซสชันได้ กรุณาลองอีกครั้ง',
   'Clinical records,': 'บันทึกการรักษา',
   'AI suggestions require clinician review.':
     'ข้อเสนอแนะจาก AI ต้องผ่านการตรวจทานโดยบุคลากรทางการแพทย์',

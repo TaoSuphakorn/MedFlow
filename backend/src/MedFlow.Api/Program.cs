@@ -32,7 +32,7 @@ var dp = builder.Services.AddDataProtection().SetApplicationName("MedFlow.AI");
 if (!builder.Environment.IsEnvironment("Testing")) dp.PersistKeysToFileSystem(new DirectoryInfo("/keys"));
 builder.Services.AddHttpClient<AiService>();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(ApiDocumentation.Configure);
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = 429;
@@ -61,7 +61,17 @@ app.Use(async (ctx, next) =>
     catch (BadHttpRequestException) { ctx.Response.StatusCode = 400; await ctx.Response.WriteAsJsonAsync(new { error = "Invalid request." }); }
     catch (Exception) { app.Logger.LogError("Unhandled request failure; trace {TraceId}", ctx.TraceIdentifier); ctx.Response.StatusCode = 500; await ctx.Response.WriteAsJsonAsync(new { error = "The request could not be completed.", traceId = ctx.TraceIdentifier }); }
 });
-if (app.Environment.IsEnvironment("Demo")) { app.UseSwagger(); app.UseSwaggerUI(); }
+if (app.Environment.IsEnvironment("Demo"))
+{
+    app.UseStaticFiles();
+    app.UseSwagger();
+    app.UseSwaggerUI(options => {
+        options.DocumentTitle = "MedFlow AI API documentation";
+        options.SwaggerEndpoint("v1/swagger.json", "MedFlow AI API v1");
+        options.EnableFilter(); options.EnableDeepLinking(); options.DisplayRequestDuration();
+        options.InjectJavascript("./medflow.js"); options.InjectStylesheet("./medflow.css");
+    });
+}
 app.UseAuthentication();
 app.Use(async (ctx, next) =>
 {
@@ -109,7 +119,7 @@ app.MapPost("/api/auth/login", async (LoginInput input, ClinicalDb db, HttpConte
         user.Email
     });
 }).RequireRateLimiting("login");
-app.MapGet("/api/auth/me", (HttpContext ctx, AiService ai) => Results.Ok(new { name = ctx.User.Identity!.Name, role = ctx.User.FindFirstValue(ClaimTypes.Role), aiMode = ai.IsDemo ? "Demo" : "Live" })).RequireAuthorization();
+app.MapGet("/api/auth/me", (HttpContext ctx, AiService ai) => Results.Ok(new { userId = int.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!), name = ctx.User.Identity!.Name, role = ctx.User.FindFirstValue(ClaimTypes.Role), aiMode = ai.IsDemo ? "Demo" : "Live" })).RequireAuthorization();
 app.MapPost("/api/auth/logout", async (HttpContext ctx, ClinicalDb db) => { await Audit(db, ctx, "auth.logout"); await ctx.SignOutAsync(); return Results.NoContent(); }).RequireAuthorization();
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapGet("/patients", async (string? search, ClinicalDb db) =>

@@ -7,8 +7,8 @@ Verified locally on **17 November 2026 (Asia/Bangkok)** using Docker Desktop 28.
 | Check | Actual result |
 |---|---|
 | `docker compose up --build -d` | Pass; frontend and backend multi-stage images built and all three application services started |
-| `docker compose --profile test run --build --rm backend-tests` | **25 passed**, 0 failed |
-| `docker compose --profile test run --build --rm e2e` | **11 passed**, 0 failed in Chromium after the Thai workflow follow-up |
+| `docker compose --profile test run --build --rm backend-tests` | **29 passed**, 0 failed after Swagger documentation/session coverage |
+| `docker compose --profile test run --build --rm e2e` | **22 passed**, 0 failed after Swagger, responsive and shared-session coverage |
 | `docker compose restart` followed by `docker compose up -d --wait` | All three application services healthy; database record fingerprint unchanged |
 | Fresh-volume startup using the optional acceptance override | Three users, 15 patients, 45 confirmed visits, one AI draft, one committed EF migration |
 | Frontend GET `http://localhost:3000` | HTTP 200 |
@@ -82,3 +82,13 @@ The isolated backend suite passed 25/25 and the isolated browser suite passed 11
 The strengthened seed assertion was exercised against a transactionally modified CI fixture: approving the AI draft while moving one original note back to draft preserved the total confirmed count but caused the seed check to reject the initial AI state. The transaction was rolled back and original seed counts were verified again.
 
 `actionlint` 1.7.12 ran inside Docker and accepted `.github/workflows/docker-ci.yml`. Official checkout and artifact actions are pinned to commits verified against their release tags. Diagnostics and cleanup commands were executed locally. A real GitHub-hosted checkout, runner execution and artifact upload remain unverified because no remote was supplied and no workflow was triggered. See [ci.md](ci.md) for Bash and PowerShell reproduction commands.
+
+## Swagger and responsive follow-up
+
+The backend suite passed 29/29 and the full browser suite passed 22/22. Swagger is available directly on port 8080 and through Nginx on port 3000, with grouped operation documentation, response schemas, role/review constraints and normal demo authentication. Browser tests execute a protected GET and create an unapproved draft through Swagger's actual Try it out controls. Production excludes both Swagger and its demo session assets.
+
+The frontend Swagger proxy retains the application's strict `script-src 'self'` policy. Directly installed interceptors attach CSRF tokens without `unsafe-eval`. Session tests cover changing accounts through the Swagger panel, login/logout via Try it out, clearing the preceding account's cached workspace, renewing CSRF before a subsequent save, focus-based reconciliation when BroadcastChannel is unavailable, and preserving unsaved drafts for the same account.
+
+Responsive browser checks cover 360, 390, 768 and 1024 CSS px, plus Swagger at 360 px. Patient actions stay in view; closed phone navigation is inert, Escape restores focus, the SOAP editor precedes AI assistance on narrow screens, and no document-level horizontal overflow was found. A targeted UI/UX Pro Max review informed larger web touch targets and 16px narrow-screen text inputs. These checks do not certify native keyboard behavior, screen-reader operation or WCAG conformance.
+
+Readiness was also verified in a disposable Docker project: `/health` returned backend JSON, failed after stopping that backend, and `/frontend-health` continued to prove Nginx liveness. The disposable project was removed and the default application remained running. See [Swagger usage and responsive details](swagger-and-responsive.md).

@@ -1709,3 +1709,296 @@ html[lang='th'] .sidebar > .nav-item {
     display: none;
   }
 }
+
+/* Phone layouts retain the same records and actions without clipping columns. */
+.sidebar-close {
+  display: none;
+}
+.session-checking > .sidebar,
+.session-checking > .main-shell {
+  visibility: hidden;
+}
+.session-check {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f7fa;
+}
+a.nav-item {
+  text-decoration: none;
+}
+.sidebar {
+  overflow-y: auto;
+}
+.profile-title,
+.profile-title > div,
+.workspace-primary,
+.workspace-assistant {
+  min-width: 0;
+}
+.dialog-content {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+  .sidebar {
+    height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .sidebar-close {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    top: 24px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 7px;
+    color: #345b72;
+    background: #edf5f8;
+  }
+  .sidebar.is-open > .brand {
+    font-size: 20px;
+    padding-right: 28px;
+  }
+  .sidebar-spacer {
+    min-height: 20px;
+  }
+  .ai-sidebar-card {
+    margin-top: 10px;
+    margin-bottom: 12px;
+  }
+  .workspace-assistant {
+    grid-row: auto;
+  }
+  .workspace-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .workspace-tabs > button {
+    flex-shrink: 0;
+  }
+  .main-content {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .mobile-menu {
+    min-width: 40px;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+  }
+  .toast {
+    width: calc(100% - 32px);
+    max-width: 520px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  .toast > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .toast button {
+    min-width: 32px;
+    min-height: 32px;
+  }
+  .language-switcher button {
+    min-height: 34px;
+  }
+}
+@media (max-width: 640px) {
+  .patient-context p,
+  .record-body p,
+  .suggestion-content > p,
+  .information-gap > p,
+  .uncertainty-box > p {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .patient-table-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .table-tools {
+    flex-wrap: wrap;
+  }
+  .search-field {
+    flex-basis: 100%;
+  }
+  .select-wrap {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .select-wrap select {
+    max-width: none;
+    flex: 1;
+  }
+  .patients-card .table-scroll {
+    overflow: visible;
+    padding: 0 14px 14px;
+  }
+  .patients-card table,
+  .patients-card tbody {
+    display: block;
+    width: 100%;
+    white-space: normal;
+  }
+  .patients-card thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .patients-card tbody {
+    display: grid;
+    gap: 12px;
+  }
+  .patients-card tbody tr {
+    display: grid;
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 14px;
+    background: #fff;
+    border: 1px solid #d9e6ee;
+    border-radius: 10px;
+  }
+  .patients-card tbody td {
+    display: block;
+    padding: 8px 0;
+    border: 0;
+    min-width: 0;
+    font-size: 12px;
+  }
+  .patients-card tbody td:first-child {
+    grid-column: 1 / -1;
+    padding: 0 52px 10px 0;
+  }
+  .patients-card tbody td:last-child {
+    position: absolute;
+    top: 12px;
+    right: 11px;
+    padding: 0;
+  }
+  .patients-card td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: #607b8d;
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+  .patients-card .patient-name-cell strong {
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .patients-card .patient-name-cell small {
+    font-size: 12px;
+  }
+  .patients-card .open-patient {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .patients-card .badge {
+    white-space: normal;
+  }
+  .table-footer {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px 18px;
+  }
+  .table-footer > span {
+    min-width: 0;
+  }
+  .patient-workspace-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .patient-workspace-heading > .btn {
+    margin-left: 0;
+    width: 100%;
+  }
+  .profile-title h1 {
+    overflow-wrap: anywhere;
+  }
+  .profile-title p {
+    flex-wrap: wrap;
+  }
+  .editor-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .editor-actions .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+  .confirmation-area .btn {
+    white-space: normal;
+  }
+  .record-heading {
+    padding: 15px 18px;
+  }
+  .record-heading > span:nth-child(2) {
+    min-width: 0;
+  }
+  .record-heading small {
+    white-space: normal;
+  }
+  .profile-kicker {
+    flex-wrap: wrap;
+    gap: 5px 8px;
+  }
+  .login-form-side {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* Comfortable web touch targets and text inputs that avoid mobile auto-zoom. */
+@media (max-width: 800px) {
+  .mobile-menu,
+  .sidebar-close,
+  .sidebar-user button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .sidebar.is-open > .brand {
+    font-size: 18px;
+    padding-left: 4px;
+    padding-right: 40px;
+  }
+  .language-switcher button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .language-switcher {
+    gap: 8px;
+  }
+  .search-field {
+    min-height: 46px;
+  }
+  .search-field input,
+  .login-form form > input,
+  .soap-section textarea {
+    font-size: 16px;
+  }
+  .search-field input {
+    height: 44px;
+  }
+  .search-field button,
+  .toast button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .select-wrap {
+    padding: 0 10px;
+  }
+  .select-wrap select,
+  .draft-picker select {
+    min-height: 44px;
+  }
+}
