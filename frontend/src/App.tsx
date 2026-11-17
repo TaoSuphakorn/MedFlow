@@ -12,7 +12,6 @@ import {
   BookOpen,
   CalendarDays,
   Check,
-  ChevronDown,
   ChevronRight,
   CircleHelp,
   ClipboardCheck,
@@ -35,6 +34,8 @@ import { Button } from './components/ui/button';
 import { Dialog } from './components/ui/dialog';
 import { Workspace } from './Workspace';
 import { OnboardingGuide } from './components/onboarding-guide';
+import { Select, SelectBoundary } from './components/ui/select';
+import { Pagination, usePagination, type PaginationControl } from './components/ui/pagination';
 
 type View = 'Overview' | 'Patients' | 'Drafts' | 'Audit log';
 const loginSchema = z.object({
@@ -180,6 +181,8 @@ export default function App() {
   const [view, setView] = useState<View>('Overview');
   const [patient, setPatient] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const directoryPaging = useState({ scope: '', page: 1, size: 10 });
+  const [directoryCategory, setDirectoryCategory] = useState('All patients');
   const [toast, setToast] = useState('');
   const [help, setHelp] = useState(false);
   const [guideReplay, setGuideReplay] = useState(0);
@@ -204,6 +207,8 @@ export default function App() {
     setPatient(null);
     setView('Overview');
     setSearch('');
+    directoryPaging[1]({ scope: '', page: 1, size: 10 });
+    setDirectoryCategory('All patients');
     setToast('');
     setShellDirty(false);
     setPendingNavigation(null);
@@ -272,7 +277,11 @@ export default function App() {
       setShellDirty(false);
       setView(next);
       setPatient(null);
-      setSearch('');
+      if (next !== 'Patients' || view !== 'Patients') setSearch('');
+      if (next !== view) {
+        setDirectoryCategory('All patients');
+        directoryPaging[1](current => ({ ...current, scope: '', page: 1 }));
+      }
       setMobile(false);
     });
   const open = (id: number) =>
@@ -320,6 +329,7 @@ export default function App() {
     ...(user.role === 'Administrator' ? [{ name: 'Audit log' as View, icon: ShieldCheck }] : []),
   ];
   return (
+    <SelectBoundary blocked={sessionSync.checking || !!sessionSync.error}>
     <div
       className={`app-shell ${sessionSync.checking || sessionSync.error ? 'session-checking' : ''}`}
     >
@@ -670,6 +680,9 @@ export default function App() {
                   setSearch={setSearch}
                   onOpen={open}
                   draftsOnly={view === 'Drafts'}
+                  pagingControl={directoryPaging}
+                  categoryValue={directoryCategory}
+                  onCategoryChange={setDirectoryCategory}
                 />
               )}
             </>
@@ -792,6 +805,7 @@ export default function App() {
         requestAnimationFrame(() => target?.focus({ preventScroll: true }));
       }} />
     </div>
+    </SelectBoundary>
   );
 }
 
@@ -832,6 +846,9 @@ function PatientTable({
   compact = false,
   draftsOnly = false,
   onViewAll,
+  pagingControl,
+  categoryValue,
+  onCategoryChange,
 }: {
   patients: Patient[];
   search: string;
@@ -840,14 +857,21 @@ function PatientTable({
   compact?: boolean;
   draftsOnly?: boolean;
   onViewAll?: () => void;
+  pagingControl?: PaginationControl;
+  categoryValue?: string;
+  onCategoryChange?: (category: string) => void;
 }) {
   const { t, locale } = useLanguage();
-  const [category, setCategory] = useState('All patients');
+  const [localCategory, setLocalCategory] = useState('All patients');
+  const category = categoryValue ?? localCategory;
+  const setCategory = onCategoryChange ?? setLocalCategory;
   const filtered = patients.filter(
     (p) =>
       `${p.name} ${p.thaiName} ${p.identifier}`.toLowerCase().includes(search.toLowerCase()) &&
       (category === 'All patients' || p.category === category),
   );
+  const paging = usePagination(filtered, JSON.stringify([search, category, draftsOnly, compact]), pagingControl);
+  const rows = compact ? filtered : paging.rows;
   return (
     <section className="card patients-card">
       <div className="patient-table-heading">
@@ -889,21 +913,8 @@ function PatientTable({
             </button>
           )}
         </div>
-        <div className="select-wrap">
-          <Settings2 size={15} />
-          <select
-            aria-label={t('Filter patients')}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            {['All patients', 'Follow-up', 'New visit', 'Routine check'].map((x) => (
-              <option key={x} value={x}>
-                {t(x)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={13} />
-        </div>
+        <Select label={t('Filter patients')} value={category} onChange={setCategory}
+          options={['All patients', 'Follow-up', 'New visit', 'Routine check'].map(value => ({ value, label: t(value) }))} />
       </div>
       {filtered.length ? (
         <div className="table-scroll">
@@ -919,7 +930,7 @@ function PatientTable({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
+              {rows.map((p) => (
                 <tr key={p.id}>
                   <td>
                     <div className="patient-name-cell">
@@ -982,7 +993,7 @@ function PatientTable({
           text={t('Try another name, patient ID, or visit type.')}
         />
       )}
-      <div className="table-footer">
+      {!compact ? <Pagination {...paging} /> : <div className="table-footer">
         <span>
           {t('Showing') + ' '}
           {filtered.length} {filtered.length === 1 ? t('patient') : t('patients')}
@@ -990,7 +1001,7 @@ function PatientTable({
           {t('Synthetic demo records')}
         </span>
         <ShieldCheck size={14} />
-      </div>
+      </div>}
     </section>
   );
 }
@@ -1010,6 +1021,7 @@ function Audit() {
         }[]
       >('/audit'),
   });
+  const paging = usePagination(q.data || [], 'audit');
   return (
     <>
       <div className="page-heading">
@@ -1054,7 +1066,7 @@ function Audit() {
                 </tr>
               </thead>
               <tbody>
-                {q.data?.map((e) => (
+                {paging.rows.map((e) => (
                   <tr key={e.id}>
                     <td>
                       <Badge tone={e.action.includes('failed') ? 'amber' : 'teal'}>
@@ -1071,6 +1083,7 @@ function Audit() {
             </table>
           </div>
         )}
+        {q.data && <Pagination {...paging} />}
       </div>
       <p className="muted small">{t('Showing the 200 most recent events.')}</p>
     </>

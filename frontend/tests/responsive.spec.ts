@@ -18,7 +18,7 @@ for (const { width, language } of [
       .click();
     await expect(
       page.getByRole('heading', { name: th ? 'ภาพรวมคลินิก' : 'Clinical overview' }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 75_000 }); // The suite may wait for the real login-rate-limit window.
     const menu = page.getByRole('button', { name: th ? 'เปิดเมนู' : 'Open navigation' });
     if (width <= 800) {
       await expect(

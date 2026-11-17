@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { sessionTest as test, expect } from './workspace-fixture';
+import { signIn } from './login-request';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('medflow.language', 'en'));
@@ -13,12 +14,13 @@ test('administrator read-only draft keeps Plan inside the card padding', async (
   await page.setViewportSize({ width: 1600, height: 1000 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Administrator', exact: true }).click();
-  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(page);
   await page.getByRole('button', { name: 'Skip guide' }).click();
   await page.getByRole('button', { name: 'Patients', exact: true }).click();
   await page.getByRole('button', { name: 'Open Somchai' }).click();
   const picker = page.getByLabel('Open a saved draft');
-  await picker.selectOption((await picker.locator('option').nth(1).getAttribute('value'))!);
+  await picker.click();
+  await page.getByRole('option').first().click();
   const plan = page.getByLabel('Plan', { exact: true });
   await expect(plan).toHaveAttribute('readonly', '');
   const fieldBox = (await plan.boundingBox())!;
@@ -32,7 +34,7 @@ for (const size of [{ width: 1286, height: 720 }, { width: 1024, height: 600 }, 
   test(`${size.width}px SOAP step keeps popup and field visible without scroll drift`, async ({ page }) => {
     await page.setViewportSize(size);
     await page.goto('/');
-    await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+    await signIn(page);
     await page.getByRole('button', { name: 'Skip guide' }).click();
     if (size.width <= 800) await page.getByRole('button', { name: 'Open navigation' }).click();
     await page.getByRole('button', { name: 'Patients', exact: true }).click();
@@ -65,7 +67,7 @@ for (const size of [{ width: 1286, height: 720 }, { width: 1024, height: 600 }, 
 for (const width of [375, 1024]) test(`${width}px: teaching popup stays beside its search target`, async ({ page }) => {
   await page.setViewportSize({ width, height: 1000 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(page);
   if (width < 801) await page.getByRole('button', { name: 'Open navigation' }).click();
   await page.getByRole('button', { name: 'Patients', exact: true }).click();
   if (width < 801) await expect(page.locator('#workspace-navigation')).not.toBeInViewport();
@@ -94,7 +96,7 @@ for (const width of [375, 1024]) test(`${width}px: teaching popup stays beside i
 test('teaches real navigation and search then remembers completion', async ({ page, browser }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(page);
   const guide = page.getByRole('dialog', { name: 'Interactive tutorial' });
   await expect(guide).toBeVisible();
   await expect(guide.getByRole('button', { name: 'Next', exact: true })).toHaveCount(0);
@@ -116,7 +118,7 @@ test('teaches real navigation and search then remembers completion', async ({ pa
   const next = await context.newPage();
   await next.addInitScript(() => localStorage.setItem('medflow.language', 'en'));
   await next.goto('/');
-  await next.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(next);
   await expect(next.getByRole('heading', { name: 'Clinical overview' })).toBeVisible();
   await expect(next.getByRole('dialog')).toHaveCount(0);
   await context.close();
@@ -125,7 +127,7 @@ test('teaches real navigation and search then remembers completion', async ({ pa
 test('phone Thai tutorial uses the drawer and keeps its tooltip in view', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 700 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(page);
   await page.getByRole('dialog', { name: 'Interactive tutorial' }).getByRole('button', { name: 'ภาษาไทย' }).click();
   await page.getByRole('button', { name: 'เปิดเมนู' }).click();
   await page.getByRole('button', { name: 'ผู้ป่วย', exact: true }).click();
@@ -144,7 +146,7 @@ test('phone Thai tutorial uses the drawer and keeps its tooltip in view', async 
 
 test('replay from visit history guides back to the actual SOAP field', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(page);
   await page.getByRole('button', { name: 'Skip guide' }).click();
   await page.getByRole('button', { name: 'Patients', exact: true }).click();
   await page.getByRole('button', { name: 'Open Somchai' }).click();
@@ -160,7 +162,7 @@ test('replay from visit history guides back to the actual SOAP field', async ({ 
 test('tutorial stays inside a visual viewport reduced by a phone keyboard', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 700 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(page);
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await page.getByRole('button', { name: 'Patients', exact: true }).click();
   await page.getByPlaceholder('Search name, Thai name, or patient ID…').fill('Somchai');
@@ -178,7 +180,7 @@ test('tutorial stays inside a visual viewport reduced by a phone keyboard', asyn
 
 test('failed dismissal retries and expired sessions return to login', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(page);
   await page.route('**/api/auth/onboarding', route => route.fulfill({ status: 503, json: {} }));
   await page.getByRole('button', { name: 'Skip guide' }).click();
   await expect(page.getByRole('alert')).toBeVisible();
@@ -191,7 +193,7 @@ test('failed dismissal retries and expired sessions return to login', async ({ p
 for (const role of ['Doctor', 'Nurse', 'Administrator']) test(`${role} replay preserves current patient and unsaved text`, async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: role, exact: true }).click();
-  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  await signIn(page);
   await page.getByRole('button', { name: 'Skip guide' }).click();
   await page.getByRole('button', { name: 'Patients', exact: true }).click();
   await page.getByRole('button', { name: 'Open Somchai' }).click();

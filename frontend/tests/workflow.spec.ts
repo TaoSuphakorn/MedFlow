@@ -1,4 +1,5 @@
 import { test, expect } from './workspace-fixture';
+import { loginRequest } from './login-request';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('medflow.language', 'en'));
@@ -8,10 +9,7 @@ test('Thai SOAP field limits fit through Nginx and Kestrel', async ({ request })
   let token = (await (await request.get('/api/auth/csrf')).json()).token;
   expect(
     (
-      await request.post('/api/auth/login', {
-        headers: { 'X-CSRF-TOKEN': token },
-        data: { email: 'doctor@medflow.demo', password: 'Demo!2026' },
-      })
+      await loginRequest(request, 'doctor', token)
     ).status(),
   ).toBe(200);
   token = (await (await request.get('/api/auth/csrf')).json()).token;
@@ -81,8 +79,8 @@ test('administrator sees draft as unapproved and cannot edit', async ({ page }) 
   await page.getByRole('button', { name: 'Patients', exact: true }).click();
   await page.getByRole('button', { name: 'Open Somchai' }).click();
   const drafts = page.getByLabel('Open a saved draft');
-  const value = await drafts.locator('option').nth(1).getAttribute('value');
-  await drafts.selectOption(value!);
+  await drafts.click();
+  await page.getByRole('option').first().click();
   await expect(page.getByRole('heading', { name: 'SOAP draft · read only' })).toBeVisible();
   await expect(page.getByText(/Confirmed No visit yet/)).toHaveCount(0);
   await expect(page.getByLabel('Subjective', { exact: true })).toHaveAttribute('readonly', '');

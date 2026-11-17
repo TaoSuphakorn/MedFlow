@@ -26,6 +26,7 @@ import { api, date, type Note, type Patient, type Soap, type User } from './lib/
 import { Avatar, Badge, Empty, ErrorState, Loading } from './components/shared';
 import { Button } from './components/ui/button';
 import { Dialog } from './components/ui/dialog';
+import { Select } from './components/ui/select';
 
 const section = z
   .string()
@@ -300,22 +301,16 @@ export function Workspace({
                     <FileText size={16} />
                     {t('Saved drafts: {count}', { count: drafts.length })}
                   </span>
-                  <select
-                    aria-label={t('Open a saved draft')}
-                    value={current?.status === 'Draft' ? current.id : ''}
-                    onChange={(e) => {
-                      const n = drafts.find((n) => n.id === Number(e.target.value));
+                  <Select
+                    label={t('Open a saved draft')}
+                    value={current?.status === 'Draft' ? String(current.id) : ''}
+                    placeholder={t('Continue a saved draft…')}
+                    onChange={(value) => {
+                      const n = drafts.find((n) => n.id === Number(value));
                       if (n) guard(() => edit(n));
                     }}
-                  >
-                    <option value="">{t('Continue a saved draft…')}</option>
-                    {drafts.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.aiGenerated ? t('AI Suggested') : t('Manual draft')} ·{' '}
-                        {date(n.createdAt, locale)} · #{n.id}
-                      </option>
-                    ))}
-                  </select>
+                    options={drafts.map(n => ({ value: String(n.id), label: `${n.aiGenerated ? t('AI Suggested') : t('Manual draft')} · ${date(n.createdAt, locale)} · #${n.id}` }))}
+                  />
                 </div>
               )}
               <section className="card editor-card">

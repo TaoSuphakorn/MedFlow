@@ -1,4 +1,5 @@
 import { test, expect } from './workspace-fixture';
+import { loginRequest } from './login-request';
 
 test('focus detects account changes when cross-tab broadcasting is unavailable', async ({
   page,
@@ -13,10 +14,7 @@ test('focus detects account changes when cross-tab broadcasting is unavailable',
   await page.getByRole('button', { name: 'Audit log', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Workspace audit log' })).toBeVisible();
   const token = (await (await page.request.get('/api/auth/csrf')).json()).token;
-  const changed = await page.request.post('/api/auth/login', {
-    headers: { 'X-CSRF-TOKEN': token },
-    data: { email: 'nurse@medflow.demo', password: 'Demo!2026' },
-  });
+  const changed = await loginRequest(page.request, 'nurse', token);
   expect(changed.status()).toBe(200);
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await expect(page.getByRole('heading', { name: 'Clinical overview' })).toBeVisible();

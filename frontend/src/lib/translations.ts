@@ -1,5 +1,11 @@
 // Clinical source content is deliberately excluded from UI localization.
 export const thai: Record<string, string> = {
+  'Rows per page': 'รายการต่อหน้า',
+  'Pagination': 'การแบ่งหน้า',
+  'Previous page': 'หน้าก่อนหน้า',
+  'Next page': 'หน้าถัดไป',
+  'Page {page}': 'หน้า {page}',
+  'Showing {start}–{end} of {total}': 'แสดง {start}–{end} จาก {total} รายการ',
   'Interactive tutorial': 'ระบบสอนใช้งาน',
   'Click Clinical documentation to see the SOAP fields.': 'กดแท็บบันทึกการรักษาที่ไฮไลต์เพื่อดูช่องเขียน SOAP',
   'Use this field for reported symptoms. Complete all four SOAP sections, then save and review the draft yourself.': 'ช่องนี้ใช้บันทึกอาการที่ผู้ป่วยแจ้ง เขียนให้ครบทั้งสี่ส่วนของ SOAP แล้วบันทึกและตรวจทานด้วยตัวเอง',

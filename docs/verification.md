@@ -8,7 +8,7 @@ Verified locally on **17 November 2026 (Asia/Bangkok)** using Docker Desktop 28.
 |---|---|
 | `docker compose up --build -d` | Pass; frontend and backend multi-stage images built and all three application services started |
 | `docker compose --profile test run --build --rm backend-tests` | **31 passed**, 0 failed after account onboarding persistence/security coverage |
-| `docker compose --profile test run --build --rm e2e` using the isolated CI override | **31 passed**, 0 failed after interactive tutorial coverage |
+| `docker compose --profile test run --build --rm e2e` using the isolated CI override | **43 passed**, 0 failed after dropdown and pagination coverage |
 | `docker compose restart` followed by `docker compose up -d --wait` | All three application services healthy; database record fingerprint unchanged |
 | Fresh-volume startup using the optional acceptance override | Three users, 15 patients, 45 confirmed visits, one AI draft, one committed EF migration |
 | Frontend GET `http://localhost:3000` | HTTP 200 |
@@ -126,3 +126,9 @@ The complete focused tutorial suite passed 10/10 in the disposable `medflow-posi
 The reported Plan-field screenshot was checked against the user's Administrator workspace. A read-only draft has no save/confirmation footer, leaving its final textarea only 1px from the card edge. A regression test reproduced that inset before the fix. The final SOAP section now adds 24px bottom padding only when it is the last form child, leaving forms with existing footers unchanged.
 
 The focused browser suite passed 14/14 in `medflow-soap-layout`, including the Administrator's selected saved draft and SOAP tutorial visibility/scroll stability at 1286, 1024 and 375px. The corrected card screenshot was inspected. The CSS applies with the tutorial open or closed. No backend or clinical data changes were required.
+
+## Dropdown and pagination follow-up
+
+The full browser suite passed 43/43 in the disposable `medflow-paging` project. New cases cover paging across the loaded patient list, size/search/filter resets, retaining page/filter/size after a patient-detail round trip, draft discard handling, keyboard/phone dropdown behavior and paging the loaded audit list. Review regressions reproduced lost page state and an open saved-draft portal surviving pending/failed session checks; both are fixed and covered, including retry with unsaved text preserved.
+
+The expanded suite honors the unchanged server login limit. Browser and API login helpers wait one window on 429; sign-in assertions wait for the resulting response instead of treating that intentional wait as a UI failure. No rate protection was disabled. Radix Select 2.4.1 was resolved with a Docker-only package-lock update, followed by Docker frontend builds. Desktop/dropdown/phone/pagination screenshots were inspected. Backend code was unchanged and its earlier 31-case result was not rerun for this frontend change. See [dropdown and paging behavior](dropdown-pagination.md) for loaded-record limits.

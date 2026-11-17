@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test';
 
 // Existing workflow suites exercise returning users. Only the onboarding preference
 // is overridden; identity, permissions, cookies, CSRF and clinical operations stay real.
-export const test = base.extend({
+export const sessionTest = base.extend({
   context: async ({ context }, use, testInfo) => {
     // The expanded suite can exceed the real 30 logins/minute limit.
     // Keep that production protection and wait for its window once on 429.
@@ -17,6 +17,8 @@ export const test = base.extend({
     });
     await use(context);
   },
+});
+export const test = sessionTest.extend({
   page: async ({ page }, use) => {
     await page.route('**/api/auth/me', async route => {
       const response = await route.fetch();
