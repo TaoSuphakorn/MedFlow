@@ -1,0 +1,35 @@
+# Use a dedicated project: docker compose -p medflow-ci -f docker-compose.yml -f docker/ci.override.yml ...
+# Compose >= 2.24.4. This file never changes the default local demo configuration.
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ci-only-local-password
+    restart: "no"
+  backend:
+    ports: !reset []
+    environment:
+      ConnectionStrings__Database: Host=postgres;Database=medflow;Username=medflow;Password=ci-only-local-password
+      OPENAI_API_KEY: ""
+      Demo__Password: Demo!2026
+    restart: "no"
+  frontend:
+    ports: !reset []
+    restart: "no"
+  backend-tests:
+    entrypoint:
+      - dotnet
+      - test
+      - backend/tests/MedFlow.Tests/MedFlow.Tests.csproj
+      - --logger
+      - console;verbosity=normal
+      - --logger
+      - trx;LogFileName=backend.trx
+      - --results-directory
+      - /results
+    volumes:
+      - ./artifacts/ci/backend:/results
+  e2e:
+    volumes:
+      - ./artifacts/ci/playwright-results:/app/test-results
+      - ./artifacts/ci/playwright-report:/app/playwright-report
+      - ./artifacts/ci/screenshots:/app/screenshots

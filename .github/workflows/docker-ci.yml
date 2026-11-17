@@ -1,0 +1,80 @@
+name: Docker verification
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-verification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      COMPOSE_FILE: docker-compose.yml:docker/ci.override.yml
+      COMPOSE_PROJECT_NAME: medflow-ci
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check Docker configuration
+        run: |
+          docker version
+          docker compose version
+          docker compose --profile test config --quiet
+
+      - name: Build and start from empty volumes
+        run: docker compose up --build -d --wait --wait-timeout 180
+
+      - name: Verify automatic migration, seed and service responses
+        shell: bash
+        run: |
+          counts=$(docker compose exec -T postgres psql -U medflow -d medflow -At < docker/ci/seed-counts.sql)
+          test "$counts" = '3|15|45|1|1' || { echo "Unexpected seed counts: $counts"; exit 1; }
+          docker compose exec -T backend curl -fsS http://backend:8080/health
+          docker compose exec -T backend curl -fsS -o /dev/null http://backend:8080/swagger/v1/swagger.json
+          docker compose exec -T frontend wget --spider -q http://frontend/
+
+      - name: Run backend integration tests
+        run: docker compose --profile test run --build --rm backend-tests
+
+      - name: Run browser workflows in Demo AI Mode
+        run: docker compose --profile test run --build --rm e2e
+
+      - name: Verify restart persistence and seed idempotence
+        shell: bash
+        run: |
+          before=$(docker compose exec -T postgres psql -U medflow -d medflow -At < docker/ci/record-snapshot.sql)
+          docker compose restart postgres backend frontend
+          docker compose up -d --wait --wait-timeout 180
+          after=$(docker compose exec -T postgres psql -U medflow -d medflow -At < docker/ci/record-snapshot.sql)
+          test "$before" = "$after" || { echo 'Stored records changed after restart'; exit 1; }
+          echo 'Record counts and content fingerprint are unchanged.'
+
+      - name: Collect Docker diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts/ci
+          docker compose --profile test ps -a > artifacts/ci/services.txt
+          docker compose --profile test logs --no-color > artifacts/ci/compose.log
+
+      - name: Upload test reports and diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docker-verification-${{ github.run_attempt }}
+          path: artifacts/ci/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Remove CI containers and volumes
+        if: always()
+        run: docker compose --profile test down --volumes --remove-orphans

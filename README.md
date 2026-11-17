@@ -157,6 +157,12 @@ Playwright exercises the real Nginx/API/database path: login → patient search 
 
 Artifacts are written to `frontend/test-results/` and `frontend/playwright-report/`. Screenshots used above are generated during the workflow test. Live OpenAI transport is covered with an HTTP stub; actual paid endpoint behavior requires separately authorized configuration and verification.
 
+## Automated CI
+
+The GitHub Actions workflow builds the application through Docker, checks fresh database initialization, runs both test suites and verifies records survive a restart. It uses an isolated database with Demo AI forced on and no published ports. Test reports, traces and Docker diagnostics are retained as workflow artifacts.
+
+See [CI setup and local reproduction](docs/ci.md). The workflow is committed locally; a GitHub-hosted run has not been triggered because this checkout has no remote repository.
+
 For health and startup diagnostics:
 
 ```bash
@@ -180,6 +186,6 @@ This is a local, single-backend portfolio MVP. It is not suitable for real patie
 
 AI suggestions can be inaccurate. Real OpenAI calls were not exercised because paid calls require explicit authorization. The healthcare behavior has not been clinically validated. Data-protection keys on the local Docker volume are not encrypted at rest. Login rate limiting is local to the single process; behind Nginx the shared proxy address contributes to its demo-wide limit.
 
-Future work: external identity and MFA, patient-level permissions, encrypted backups, tamper-evident audit retention, a dedicated migration job for multi-instance deployment, stronger AI evaluation, accessibility auditing and a complete Thai localization.
+Future work: external identity and MFA, patient-level permissions, encrypted backups, tamper-evident audit retention, a dedicated migration job for multi-instance deployment, stronger AI evaluation, accessibility auditing and additional UI languages.
 
 See [verification.md](docs/verification.md) for actual verification results and unverified acceptance items.

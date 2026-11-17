@@ -14,3 +14,4 @@
 migration.log
 frontend-lock.log
 acceptance-*.log
+artifacts/

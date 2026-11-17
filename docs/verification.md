@@ -72,3 +72,13 @@ The final browser suite passed **10/10** checks: six existing English workflow c
 The backend suite now contains 25 cases. The two added cases failed against the previous summary-edit behavior, then passed after the SOAP edit endpoint was restricted by note kind. No migration was needed.
 
 The browser suite now contains 11 cases. The added Thai flow searches by a Thai patient name, generates a labeled deterministic AI draft, saves unique reviewed text, confirms as Doctor, reloads the record, switches language without translating clinical content, and verifies the Administrator audit row against the actual confirmed note ID. This prevents older audit events from satisfying the check.
+
+## Docker CI follow-up
+
+The new GitHub Actions workflow was validated locally using `docker/ci.override.yml` on a separate `medflow-ci` project. Docker Compose parsed the configuration; the effective configuration has no published ports and an explicitly empty OpenAI key. Fresh initialization produced three users, 15 patients, 45 confirmed notes, one unapproved AI SOAP draft and one migration.
+
+The isolated backend suite passed 25/25 and the isolated browser suite passed 11/11. The backend TRX and Playwright HTML reports were generated under `artifacts/ci/`; tracked README screenshots were not changed. All application services restarted successfully with identical record counts and a checksum covering every stored note field. A snapshot of the original working demo was also unchanged throughout this check.
+
+The strengthened seed assertion was exercised against a transactionally modified CI fixture: approving the AI draft while moving one original note back to draft preserved the total confirmed count but caused the seed check to reject the initial AI state. The transaction was rolled back and original seed counts were verified again.
+
+`actionlint` 1.7.12 ran inside Docker and accepted `.github/workflows/docker-ci.yml`. Official checkout and artifact actions are pinned to commits verified against their release tags. Diagnostics and cleanup commands were executed locally. A real GitHub-hosted checkout, runner execution and artifact upload remain unverified because no remote was supplied and no workflow was triggered. See [ci.md](ci.md) for Bash and PowerShell reproduction commands.
