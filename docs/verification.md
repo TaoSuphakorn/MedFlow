@@ -8,7 +8,7 @@ Verified locally on **17 November 2026 (Asia/Bangkok)** using Docker Desktop 28.
 |---|---|
 | `docker compose up --build -d` | Pass; frontend and backend multi-stage images built and all three application services started |
 | `docker compose --profile test run --build --rm backend-tests` | **29 passed**, 0 failed after Swagger documentation/session coverage |
-| `docker compose --profile test run --build --rm e2e` | **22 passed**, 0 failed after Swagger, responsive and shared-session coverage |
+| `docker compose --profile test run --build --rm e2e` | **23 passed**, 0 failed after Calm Care theme and layout coverage |
 | `docker compose restart` followed by `docker compose up -d --wait` | All three application services healthy; database record fingerprint unchanged |
 | Fresh-volume startup using the optional acceptance override | Three users, 15 patients, 45 confirmed visits, one AI draft, one committed EF migration |
 | Frontend GET `http://localhost:3000` | HTTP 200 |
@@ -92,3 +92,7 @@ The frontend Swagger proxy retains the application's strict `script-src 'self'` 
 Responsive browser checks cover 360, 390, 768 and 1024 CSS px, plus Swagger at 360 px. Patient actions stay in view; closed phone navigation is inert, Escape restores focus, the SOAP editor precedes AI assistance on narrow screens, and no document-level horizontal overflow was found. A targeted UI/UX Pro Max review informed larger web touch targets and 16px narrow-screen text inputs. These checks do not certify native keyboard behavior, screen-reader operation or WCAG conformance.
 
 Readiness was also verified in a disposable Docker project: `/health` returned backend JSON, failed after stopping that backend, and `/frontend-health` continued to prove Nginx liveness. The disposable project was removed and the default application remained running. See [Swagger usage and responsive details](swagger-and-responsive.md).
+
+## Calm Care theme follow-up
+
+The frontend Docker build passed, followed by 23/23 browser tests. The new theme keeps locally bundled Thai/English fonts and existing workflow controls while changing navigation, surfaces, typography and component styling. Additional checks cover a 375px login and overview in portrait/landscape with reduced motion and an enlarged root font. Desktop login/overview and phone SOAP screenshots were inspected; the closed drawer's unwanted shadow was removed and five focused layout cases passed again. All three application services remained healthy. Backend code was unchanged; its previously verified 29-case suite was not rerun for this CSS change. See [theme details](calm-care-theme.md).

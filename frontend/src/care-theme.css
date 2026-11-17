@@ -1,0 +1,173 @@
+/* Calm Care: warm clinical surfaces with a deep navigation rail.
+   Layout and responsive behavior remain in clinical-theme.css. */
+:root {
+  --teal: #147d73;
+  --teal-dark: #0c625b;
+  --ink: #203b40;
+  --muted: #536e72;
+  --border: #dce7e3;
+  --surface: #ffffff;
+  --canvas: #f4f7f5;
+  --focus: #147d73;
+  --nav-surface: #142e38;
+  --nav-text: #bfd0d5;
+  --nav-active: #244b52;
+  --accent-soft: #e7f3ee;
+  --card-shadow: 0 4px 24px #1c423807;
+}
+body { background: var(--canvas); }
+::selection { background: #cce7dd; color: #173b36; }
+.card {
+  border-color: var(--border);
+  border-radius: 18px;
+  box-shadow: var(--card-shadow);
+}
+.btn { border-radius: 10px; min-height: 44px; font-size: 13px; }
+.btn-primary, .btn-secondary { background: var(--teal); box-shadow: none; }
+.btn-primary:hover:not(:disabled), .btn-secondary:hover:not(:disabled),
+.btn-ai:hover:not(:disabled) { background: var(--teal-dark); }
+.btn-outline { color: #365c59; border-color: #c9dbd5; }
+.btn-outline:hover:not(:disabled) { background: #eef5f1; border-color: #83afa2; }
+.btn:active:not(:disabled), .open-patient:active { filter: brightness(.94); }
+.text-link { color: var(--teal-dark); }
+.badge { border-radius: 7px; }
+.badge-teal { background: var(--accent-soft); color: #25654d; }
+.avatar { background: #e4f0e9; color: #326d58; }
+.brand-mark { background: var(--teal); border-radius: 13px; }
+.brand-ai { color: var(--teal); }
+.sidebar {
+  background: var(--nav-surface);
+  border-right: 0;
+  padding-top: 32px;
+}
+.sidebar > .brand { color: #f4faf8; margin-bottom: 42px; }
+.sidebar .brand-ai { color: #88d4bd; }
+.sidebar .brand small { color: #a9c2c7; }
+.sidebar .brand-mark { background: #2c635e; color: white; }
+.sidebar .workspace-label { color: #a2bdc3; font-size: 11px; }
+.sidebar .nav-item { color: var(--nav-text); border-radius: 10px; }
+.sidebar .nav-item:hover { background: #203f49; color: #ffffff; }
+.sidebar .nav-item.active {
+  background: var(--nav-active);
+  color: #e7fff5;
+  box-shadow: inset 3px 0 #88d4bd;
+}
+.sidebar .nav-count { background: #365760; color: #e3f2ef; }
+.sidebar .ai-sidebar-card {
+  background: #1c3b45;
+  border-color: #35535b;
+  border-radius: 14px;
+}
+.sidebar .ai-sidebar-card h4 { color: #edf6f3; font-size: 13px; }
+.sidebar .ai-sidebar-card p { color: #b9ced1; font-size: 12px; }
+.sidebar .ai-orb { background: #30564f; color: #b0e5cf; }
+.sidebar .ai-card-mode { color: #a5dbc6; font-size: 11px; }
+.sidebar .sidebar-user { border-color: #36515a; }
+.sidebar .sidebar-user strong { color: #edf7f4; font-size: 12px; }
+.sidebar .sidebar-user small { color: #b4cbd0; font-size: 11px; }
+.sidebar .sidebar-user button, .sidebar .sidebar-close { color: #c5d9dc; }
+.sidebar .sidebar-user button:hover, .sidebar .sidebar-close:hover {
+  background: #2b4d56; color: #fff;
+}
+.sidebar .avatar { background: #365953; color: #dcf4e7; }
+.topbar { background: #ffffffed; border-color: var(--border); }
+.breadcrumb strong { color: var(--ink); }
+.main-content { padding-top: 36px; }
+.eyebrow { color: #5c7770; font-size: 11px; letter-spacing: .8px; }
+.page-heading h1 { font-size: 31px; font-weight: 650; color: var(--ink); }
+.page-heading p { color: var(--muted); font-size: 14px; }
+.date-pill { border-color: var(--border); border-radius: 12px; color: var(--muted); }
+.language-switcher { border-color: var(--border); background: #edf3ef; border-radius: 10px; }
+.stat-card { padding: 22px; border-top: 1px solid var(--border); }
+.stat-card:nth-child(n) { border-top-color: var(--border); }
+.stat-card > strong { color: var(--ink); font-size: 36px; font-weight: 600; }
+.stat-label { color: var(--muted); font-size: 13px; }
+.stat-card > small { font-size: 11px; }
+.icon-tile.teal { background: #e5f2eb; color: #27745e; }
+.icon-tile.blue { background: #eaf1f8; color: #426b91; }
+.icon-tile.amber { background: #fbf1df; color: #986b26; }
+.welcome-banner {
+  background: #e6efe8;
+  border-color: #d3e3d7;
+  border-radius: 18px;
+  padding: 28px;
+}
+.banner-eyebrow { color: #426d5a; font-size: 11px; }
+.welcome-banner h2 { color: #244d3e; font-weight: 600; font-size: 29px; }
+.welcome-banner p { color: #456a59; font-size: 13px; }
+.welcome-banner .btn { background: var(--teal-dark); color: white; min-height: 44px; }
+.welcome-banner .btn:hover:not(:disabled) { background: #084d46; }
+.banner-art { color: #508c70; opacity: .65; }
+.art-heart, .art-spark, .art-check { border-color: #b3cebd; color: #4b836a; }
+.patient-table-heading h2 { color: var(--ink); font-size: 18px; }
+.patient-table-heading p { color: var(--muted); font-size: 13px; }
+.search-field, .select-wrap { border-color: #d1dfd9; border-radius: 10px; }
+.search-field input, .select-wrap select { font-size: 13px; }
+.search-field:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px #dfefe7; }
+th { background: #f5f8f5; color: #566f65; font-size: 12px; border-color: #e4ece6; }
+td { border-color: #e9efea; }
+tbody tr:hover { background: #f6faf7; }
+.patient-name-cell strong { color: var(--ink); font-size: 13px; }
+.patient-name-cell small, .patient-id, .age-sex, .date-cell { font-size: 12px; }
+.open-patient { color: #397963; background: #edf5ef; border-radius: 10px; }
+.open-patient:hover { color: #16553e; background: #dceee2; }
+.table-footer { background: #fafcf9; color: #597368; font-size: 11px; }
+.assistant-intro h3, .section-heading h2, .ai-panel-heading h2 { color: var(--ink); }
+.assistant-intro h3 { font-size: 22px; }
+.assistant-intro > p, .assistant-feature strong { font-size: 13px; }
+.assistant-feature small, .assistant-disclosure { font-size: 12px; }
+.review-card { background: #fffbf2; border-color: #ebdfc6; }
+.patient-context { border-radius: 16px; background: #fdfefc; }
+.profile-title h1 { color: var(--ink); }
+.workspace-tabs > button.selected { color: var(--teal-dark); border-color: var(--teal); }
+.soap-label label { color: var(--ink); font-size: 14px; }
+.soap-label small, .editor-meta > span:first-child, .editor-actions > span { font-size: 12px; }
+.soap-section textarea {
+  font-size: 14px; border-color: #ccdcd3; border-radius: 12px;
+  color: #2e4940; background: #fdfefc;
+}
+.soap-section textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #e2f0e8; }
+.soap-section textarea:read-only { background: #f5f8f5; }
+.soap-letter { border-radius: 10px; background: #e6f1e9; color: #326e51; }
+.confirmation-area { background: #eef6ef; border-color: #d4e5d5; }
+.ai-panel { border-color: #d7e3df; }
+.ai-panel-heading { background: #f2f7f4; }
+.mode-banner { background: #eaf2f1; color: #396c66; }
+.record-body p { font-size: 14px; line-height: 1.85; }
+.dialog-content { border-radius: 20px; border-color: var(--border); }
+.dialog-overlay { background: #102a3880; }
+.login-story { background: #142e38; }
+.login-story > .brand { color: #f0f8f2; }
+.login-copy .light { color: #b0d7ca; }
+.login-story .brand-mark { background: #2c635e; }
+.login-story .brand-ai, .login-copy h1 span { color: #a7d9bf; }
+.login-story .brand small, .login-story-footer { color: #b0cacd; }
+.login-copy h1 { color: #f0f8f2; font-weight: 550; }
+.login-copy > p { color: #bfd3d4; font-size: 16px; }
+.login-feature { color: #dfefe7; }
+.login-feature svg { color: #a7d9bf; }
+.login-feature small { color: #b5cdd0; }
+.login-form-side { background: #f7f9f5; }
+.login-form { padding: 32px; border: 1px solid var(--border); border-radius: 24px; background: white; box-shadow: var(--card-shadow); }
+.login-form h2 { color: var(--ink); }
+.login-form input { border-color: #ccdcd3; border-radius: 10px; }
+.demo-selector > div { background: #f0f5f1; border-radius: 10px; }
+.demo-selector button.selected { color: var(--teal-dark); border-color: #d5e3da; }
+.login-demo-note { background: #f2f7f2; border-color: #dce8dc; color: #526e5d; border-radius: 12px; }
+@media (max-width: 800px) {
+  .main-content { padding-top: 26px; }
+  .page-heading h1 { font-size: 27px; }
+  .sidebar { box-shadow: none; }
+  .sidebar.is-open { box-shadow: 16px 0 60px #102a3826; }
+  .soap-section textarea, .search-field input, .select-wrap select { font-size: 16px; }
+  .login-form { padding: 24px; }
+}
+@media (max-width: 640px) {
+  .stat-card { padding: 17px; }
+  .stat-card > strong { font-size: 30px; }
+  .welcome-banner { padding: 24px 20px; }
+  .welcome-banner h2 { font-size: 25px; }
+  .patient-table-card tbody tr { border-color: var(--border); border-radius: 14px; }
+  .patient-table-heading h2 { font-size: 17px; }
+  .login-form { padding: 22px 18px; }
+}

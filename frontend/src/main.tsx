@@ -7,6 +7,7 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/noto-sans-thai';
 import './styles.css';
 import './clinical-theme.css';
+import './care-theme.css';
 const client = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: false } },
 });
