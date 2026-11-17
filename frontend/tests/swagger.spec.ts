@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './workspace-fixture';
 
 test('Swagger through Nginx supports normal login and CSRF-protected Try it out', async ({
   page,

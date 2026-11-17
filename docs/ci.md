@@ -6,7 +6,7 @@ The `Docker verification` workflow in `.github/workflows/docker-ci.yml` runs on 
 
 1. Compose configuration and Docker availability.
 2. Image builds, service health and startup from fresh database volumes.
-3. Automatic migration and seed counts: three users, 15 patients, 45 confirmed notes, one AI draft and one migration.
+3. Automatic migration and seed counts: three users, 15 patients, 45 confirmed notes, one AI draft and two migrations.
 4. Backend integration tests, including validation, authorization, confirmation, audit rollback and repeated seeding.
 5. Real browser workflows in Thai and English, using deterministic Demo AI.
 6. Record counts and a checksum of all stored note fields before and after restarting the application services.
@@ -40,7 +40,7 @@ Before running tests, verify the fresh seed. In Bash:
 ```bash
 ci() { docker compose -p medflow-ci -f docker-compose.yml -f docker/ci.override.yml "$@"; }
 counts=$(ci exec -T postgres psql -U medflow -d medflow -At < docker/ci/seed-counts.sql)
-test "$counts" = '3|15|45|1|1'
+test "$counts" = '3|15|45|1|2'
 ```
 
 In PowerShell:
@@ -48,7 +48,7 @@ In PowerShell:
 ```powershell
 $ciArgs = @('-p', 'medflow-ci', '-f', 'docker-compose.yml', '-f', 'docker/ci.override.yml')
 $counts = Get-Content -Raw docker/ci/seed-counts.sql | docker compose @ciArgs exec -T postgres psql -U medflow -d medflow -At
-if ($counts -ne '3|15|45|1|1') { throw "Unexpected seed counts: $counts" }
+if ($counts -ne '3|15|45|1|2') { throw "Unexpected seed counts: $counts" }
 ```
 
 The fourth count is specifically an unapproved AI SOAP draft. Run the test suites:

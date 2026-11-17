@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           counts=$(docker compose exec -T postgres psql -U medflow -d medflow -At < docker/ci/seed-counts.sql)
-          test "$counts" = '3|15|45|1|1' || { echo "Unexpected seed counts: $counts"; exit 1; }
+          test "$counts" = '3|15|45|1|2' || { echo "Unexpected seed counts: $counts"; exit 1; }
           docker compose exec -T backend curl -fsS http://backend:8080/health
           docker compose exec -T backend curl -fsS -o /dev/null http://backend:8080/swagger/v1/swagger.json
           docker compose exec -T frontend wget --spider -q http://frontend/

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './workspace-fixture';
 
 for (const { width, language } of [
   { width: 360, language: 'th' },

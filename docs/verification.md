@@ -7,8 +7,8 @@ Verified locally on **17 November 2026 (Asia/Bangkok)** using Docker Desktop 28.
 | Check | Actual result |
 |---|---|
 | `docker compose up --build -d` | Pass; frontend and backend multi-stage images built and all three application services started |
-| `docker compose --profile test run --build --rm backend-tests` | **29 passed**, 0 failed after Swagger documentation/session coverage |
-| `docker compose --profile test run --build --rm e2e` | **23 passed**, 0 failed after Calm Care theme and layout coverage |
+| `docker compose --profile test run --build --rm backend-tests` | **31 passed**, 0 failed after account onboarding persistence/security coverage |
+| `docker compose --profile test run --build --rm e2e` using the isolated CI override | **30 passed**, 0 failed after first-login guide coverage |
 | `docker compose restart` followed by `docker compose up -d --wait` | All three application services healthy; database record fingerprint unchanged |
 | Fresh-volume startup using the optional acceptance override | Three users, 15 patients, 45 confirmed visits, one AI draft, one committed EF migration |
 | Frontend GET `http://localhost:3000` | HTTP 200 |
@@ -96,3 +96,13 @@ Readiness was also verified in a disposable Docker project: `/health` returned b
 ## Calm Care theme follow-up
 
 The frontend Docker build passed, followed by 23/23 browser tests. The new theme keeps locally bundled Thai/English fonts and existing workflow controls while changing navigation, surfaces, typography and component styling. Additional checks cover a 375px login and overview in portrait/landscape with reduced motion and an enlarged root font. Desktop login/overview and phone SOAP screenshots were inspected; the closed drawer's unwanted shadow was removed and five focused layout cases passed again. All three application services remained healthy. Backend code was unchanged; its previously verified 29-case suite was not rerun for this CSS change. See [theme details](calm-care-theme.md).
+
+## First-login guide follow-up
+
+The backend suite passed 31/31 cases, including a newly created account's unseen state, server persistence across sessions, account isolation, repeated dismissal and authentication/CSRF requirements. New guide tests failed before implementation. Review uncovered an expired-session dismissal trap and lost keyboard focus; regression tests reproduced both before fixes.
+
+The full browser suite passed 30/30 using the disposable `medflow-onboarding` Compose project with the CI override. It covers completion across browser contexts, skipping, Help replay, unchanged unsaved SOAP text/dirty state, Thai/English switching, 375px layout, all three role descriptions, focus restoration, failed-save retry and expired-session login recovery. Existing clinical workflow tests override only the onboarding preference to represent returning users. The expanded suite can exceed the real 30-logins/minute protection; its returning-user fixture waits one minute and retries once on 429 instead of weakening the server limit. Desktop and phone screenshots were inspected. This is not a full assistive-technology audit.
+
+Both application images built and started locally. The automatic nullable-column migration preserved the freshly reset working data: `3|15|45|1|2` for users/patients/confirmed notes/AI drafts/migrations, and all three accounts remained unseen (`OnboardingSeenAt` null). Browser writes ran only in the disposable project, not the working demo. No paid AI request or publication was performed. See [guide behavior and API details](first-login-guide.md).
+
+After the final login-state reset refactor, 11 focused guide/session tests passed. The disposable Compose project and its volumes were removed, and the temporary backend test database was stopped. The three working application services remained healthy.

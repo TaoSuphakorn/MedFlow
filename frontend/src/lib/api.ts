@@ -4,6 +4,7 @@ export type User = {
   name: string;
   role: 'Doctor' | 'Nurse' | 'Administrator';
   aiMode: 'Demo' | 'Live';
+  onboardingSeenAt: string | null;
 };
 export type Note = {
   id: number;

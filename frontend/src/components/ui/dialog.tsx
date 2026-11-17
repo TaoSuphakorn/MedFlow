@@ -7,21 +7,27 @@ export function Dialog({
   onOpenChange,
   title,
   children,
+  description = 'Review workspace information below.',
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   children: ReactNode;
+  description?: string;
+  onCloseAutoFocus?: () => void;
 }) {
   const { t } = useLanguage();
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="dialog-overlay" />
-        <DialogPrimitive.Content className="dialog-content">
+        <DialogPrimitive.Content className="dialog-content" onCloseAutoFocus={event => {
+          if (onCloseAutoFocus) { event.preventDefault(); onCloseAutoFocus(); }
+        }}>
           <DialogPrimitive.Title>{t(title)}</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
-            {t('Review workspace information below.')}
+            {t(description)}
           </DialogPrimitive.Description>
           <DialogPrimitive.Close className="dialog-close" aria-label={t('Close')}>
             <X size={18} />

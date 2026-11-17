@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './workspace-fixture';
 
 test('Thai doctor workflow confirms an AI draft and administrator can inspect its audit', async ({
   page,

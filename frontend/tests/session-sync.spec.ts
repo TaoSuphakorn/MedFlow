@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './workspace-fixture';
 
 test('focus detects account changes when cross-tab broadcasting is unavailable', async ({
   page,

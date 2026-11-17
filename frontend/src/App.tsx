@@ -34,6 +34,7 @@ import { Avatar, Badge, Empty, ErrorState, Loading, Logo } from './components/sh
 import { Button } from './components/ui/button';
 import { Dialog } from './components/ui/dialog';
 import { Workspace } from './Workspace';
+import { OnboardingGuide } from './components/onboarding-guide';
 
 type View = 'Overview' | 'Patients' | 'Drafts' | 'Audit log';
 const loginSchema = z.object({
@@ -181,6 +182,7 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
   const [help, setHelp] = useState(false);
+  const [guideReplay, setGuideReplay] = useState(0);
   const [settings, setSettings] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [compactNavigation, setCompactNavigation] = useState(
@@ -189,13 +191,16 @@ export default function App() {
   const [shellDirty, setShellDirty] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const helpButtonRef = useRef<HTMLButtonElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<User>('/auth/me'), retry: false });
   const patients = useQuery({
     queryKey: ['patients'],
     queryFn: () => api<Patient[]>('/patients'),
     enabled: !!me.data,
   });
-  const sessionSync = useSessionSync(qc, () => {
+  function resetWorkspace() {
     setPatient(null);
     setView('Overview');
     setSearch('');
@@ -203,9 +208,11 @@ export default function App() {
     setShellDirty(false);
     setPendingNavigation(null);
     setHelp(false);
+    setGuideReplay(0);
     setSettings(false);
     setMobile(false);
-  });
+  }
+  const sessionSync = useSessionSync(qc, resetWorkspace);
   useEffect(() => {
     const media = window.matchMedia('(max-width: 800px)');
     const onChange = () => {
@@ -284,6 +291,7 @@ export default function App() {
     try {
       await api('/auth/logout', 'POST');
       qc.clear();
+      setGuideReplay(0);
       setPatient(null);
       setView('Overview');
       await me.refetch();
@@ -296,6 +304,7 @@ export default function App() {
     return (
       <Login
         onLogin={() => {
+          resetWorkspace();
           qc.clear();
           void me.refetch();
         }}
@@ -396,6 +405,7 @@ export default function App() {
         </button>
         <button
           className="nav-item"
+          ref={helpButtonRef}
           onClick={() => {
             setMobile(false);
             setHelp(true);
@@ -421,6 +431,7 @@ export default function App() {
           <div className="breadcrumb">
             <button
               className="mobile-menu"
+              ref={menuButtonRef}
               aria-label={t('Open navigation')}
               aria-expanded={mobile}
               aria-controls="workspace-navigation"
@@ -442,7 +453,7 @@ export default function App() {
             <Avatar name={user.name} />
           </div>
         </header>
-        <main className="main-content">
+        <main className="main-content" ref={mainRef} tabIndex={-1}>
           {patient ? (
             <Workspace
               key={patient}
@@ -705,6 +716,10 @@ export default function App() {
       </Dialog>
       <Dialog open={help} onOpenChange={setHelp} title={t('Explore the MedFlow demo')}>
         <div className="help-content">
+          <Button variant="outline" onClick={() => {
+            setHelp(false);
+            setGuideReplay(value => value + 1);
+          }}><BookOpen size={18} />{t('Restart walkthrough')}</Button>
           <p>
             {t(
               'All records belong to fictional patients. This portfolio application must never be used for clinical care.',
@@ -765,6 +780,12 @@ export default function App() {
           </Button>
         </div>
       </Dialog>
+      <OnboardingGuide key={user.userId} user={user} replay={guideReplay} restoreFocus={() => {
+        const target = guideReplay > 0
+          ? compactNavigation ? menuButtonRef.current : helpButtonRef.current
+          : mainRef.current;
+        target?.focus({ preventScroll: true });
+      }} />
     </div>
   );
 }

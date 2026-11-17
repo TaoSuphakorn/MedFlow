@@ -35,6 +35,7 @@ public sealed class ClinicalOperationFilter : IOperationFilter
         var path = "/" + context.ApiDescription.RelativePath?.Trim('/').Replace(":int", "");
         var method = context.ApiDescription.HttpMethod;
         Entry? entry = (method, path) switch {
+            ("POST", "/api/auth/onboarding") => new("DismissOnboarding", "Authentication", "Remember the introductory guide", "Marks the current account's guide as seen after completion or skip. Idempotent, requires normal authentication and CSRF. Does not change clinical records.", null, 204, [400, 401]),
             ("GET", "/health") => new("Health", "System", "Check database readiness", "Healthy only after migrations and seed complete.", typeof(HealthResponse), Errors: [503]),
             ("GET", "/api/auth/csrf") => new("GetCsrfToken", "Authentication", "Get a CSRF token", "Returns a request token and antiforgery cookie. Request a fresh token after changing the signed-in user.", typeof(CsrfResponse)),
             ("POST", "/api/auth/login") => new("SignIn", "Authentication", "Sign in with a demo account", "Normal password-hash verification. Requires a CSRF token. Local demo accounts: doctor@medflow.demo, nurse@medflow.demo, admin@medflow.demo. Default demo password: Demo!2026.", typeof(LoginResponse), Errors: [400, 401, 429]),
@@ -55,7 +56,7 @@ public sealed class ClinicalOperationFilter : IOperationFilter
         operation.Summary = entry.Summary;
         operation.Description = entry.Description;
         operation.Responses.Clear();
-        var success = new OpenApiResponse { Description = entry.Success == 201 ? "Draft created; not approved" : entry.Success == 204 ? "Session ended" : "Success" };
+        var success = new OpenApiResponse { Description = entry.Success == 201 ? "Draft created; not approved" : entry.Success == 204 ? "Success; no response body" : "Success" };
         if (entry.Body is not null)
             success.Content["application/json"] = new OpenApiMediaType { Schema = context.SchemaGenerator.GenerateSchema(entry.Body, context.SchemaRepository) };
         operation.Responses[entry.Success.ToString()] = success;
@@ -72,7 +73,7 @@ public sealed class ClinicalOperationFilter : IOperationFilter
     private sealed record HealthResponse(string Status);
     private sealed record CsrfResponse(string Token);
     private sealed record LoginResponse(string Name, string Role, string Email);
-    private sealed record SessionResponse(int UserId, string Name, string Role, string AiMode);
+    private sealed record SessionResponse(int UserId, string Name, string Role, string AiMode, DateTime? OnboardingSeenAt);
     private sealed record PatientListResponse(int Id, string Identifier, string Name, string ThaiName, int Age, string Gender, string Category, string Color, DateTime? LastVisit, int DraftCount, int VisitCount);
 }
 

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './workspace-fixture';
 
 test('login and overview fit narrow, landscape and enlarged text layouts', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('medflow.language', 'th'));

@@ -119,7 +119,20 @@ app.MapPost("/api/auth/login", async (LoginInput input, ClinicalDb db, HttpConte
         user.Email
     });
 }).RequireRateLimiting("login");
-app.MapGet("/api/auth/me", (HttpContext ctx, AiService ai) => Results.Ok(new { userId = int.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!), name = ctx.User.Identity!.Name, role = ctx.User.FindFirstValue(ClaimTypes.Role), aiMode = ai.IsDemo ? "Demo" : "Live" })).RequireAuthorization();
+app.MapGet("/api/auth/me", async (HttpContext ctx, AiService ai, ClinicalDb db) =>
+{
+    var userId = int.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == userId);
+    return user is null ? Results.Unauthorized() : Results.Ok(new { userId, name = user.Name, role = user.Role, aiMode = ai.IsDemo ? "Demo" : "Live", user.OnboardingSeenAt });
+}).RequireAuthorization();
+app.MapPost("/api/auth/onboarding", async (HttpContext ctx, ClinicalDb db) =>
+{
+    var userId = int.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    if (!await db.Users.AnyAsync(x => x.Id == userId)) return Results.Unauthorized();
+    await db.Users.Where(x => x.Id == userId && x.OnboardingSeenAt == null)
+        .ExecuteUpdateAsync(update => update.SetProperty(x => x.OnboardingSeenAt, DateTime.UtcNow));
+    return Results.NoContent();
+}).RequireAuthorization();
 app.MapPost("/api/auth/logout", async (HttpContext ctx, ClinicalDb db) => { await Audit(db, ctx, "auth.logout"); await ctx.SignOutAsync(); return Results.NoContent(); }).RequireAuthorization();
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapGet("/patients", async (string? search, ClinicalDb db) =>

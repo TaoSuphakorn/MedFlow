@@ -34,6 +34,41 @@ public class WorkflowTests : IClassFixture<WebApplicationFactory<Program>>
         using var c = Client();
         Assert.Equal(HttpStatusCode.Unauthorized, (await c.GetAsync("/api/patients")).StatusCode);
     }
+    [Fact] public async Task Onboarding_dismissal_is_persistent_idempotent_and_account_scoped()
+    {
+        var prefix = "guide-" + Guid.NewGuid().ToString("N");
+        using (var scope = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.CreateScope(factory.Services))
+        {
+            var db = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<MedFlow.Api.Data.ClinicalDb>(scope.ServiceProvider);
+            var user = new MedFlow.Api.Data.User { Email = prefix + "@medflow.demo", Name = "Guide test", Role = "Nurse" };
+            user.PasswordHash = new Microsoft.AspNetCore.Identity.PasswordHasher<MedFlow.Api.Data.User>().HashPassword(user, "Demo!2026");
+            db.Users.Add(user); await db.SaveChangesAsync();
+        }
+        using var c = Client(); await Login(c, prefix);
+        var before = await c.GetFromJsonAsync<JsonElement>("/api/auth/me");
+        Assert.True(before.TryGetProperty("onboardingSeenAt", out var initial));
+        Assert.Equal(JsonValueKind.Null, initial.ValueKind);
+        Assert.Equal(HttpStatusCode.NoContent, (await c.PostAsync("/api/auth/onboarding", null)).StatusCode);
+        var first = (await c.GetFromJsonAsync<JsonElement>("/api/auth/me")).GetProperty("onboardingSeenAt").GetString();
+        Assert.False(string.IsNullOrEmpty(first));
+        Assert.Equal(HttpStatusCode.NoContent, (await c.PostAsync("/api/auth/onboarding", null)).StatusCode);
+        using var next = Client(); await Login(next, prefix);
+        Assert.Equal(first, (await next.GetFromJsonAsync<JsonElement>("/api/auth/me")).GetProperty("onboardingSeenAt").GetString());
+        using var doctor = Client(); await Login(doctor);
+        Assert.NotEqual(first, (await doctor.GetFromJsonAsync<JsonElement>("/api/auth/me")).GetProperty("onboardingSeenAt").ToString());
+    }
+    [Fact] public async Task Onboarding_requires_authentication_and_csrf()
+    {
+        using var c = Client();
+        Assert.NotEqual(HttpStatusCode.NoContent, (await c.PostAsync("/api/auth/onboarding", null)).StatusCode);
+        var csrf = await c.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
+        c.DefaultRequestHeaders.Add("X-CSRF-TOKEN", csrf.GetProperty("token").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await c.PostAsync("/api/auth/onboarding", null)).StatusCode);
+        c.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+        await Login(c);
+        c.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsync("/api/auth/onboarding", null)).StatusCode);
+    }
     [Fact] public async Task Current_session_identifies_the_user_without_exposing_credentials()
     {
         using var c = Client(); await Login(c);

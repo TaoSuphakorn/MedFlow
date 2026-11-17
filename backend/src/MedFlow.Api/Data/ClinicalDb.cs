@@ -11,6 +11,7 @@ public sealed class User
     public string Name { get; set; } = "";
     public string Role { get; set; } = "";
     public string PasswordHash { get; set; } = "";
+    public DateTime? OnboardingSeenAt { get; set; }
 }
 public sealed class Patient
 {
