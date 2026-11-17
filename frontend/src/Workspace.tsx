@@ -412,7 +412,7 @@ export function Workspace({
                               {t('All changes saved')}
                             </>
                           ) : (
-                            'Your note stays a draft until confirmed.'
+                            t('Your note stays a draft until confirmed.')
                           )}
                         </span>
                         <Button variant="outline" type="submit" disabled={!!busy}>
