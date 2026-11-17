@@ -114,3 +114,9 @@ The introduction was replaced with spotlights on real controls and interaction-g
 Desktop/phone screenshots were inspected. The viewport test simulates keyboard-induced viewport reduction; physical mobile keyboards and full screen-reader behavior remain unverified. The backend is unchanged and retains its previously verified 31 cases. No AI generation, clinical save or clinical confirmation is performed by the tutorial. The working demo's 46 notes were preserved.
 
 Eight focused tutorial cases passed again after strengthening empty-result recovery and keyboard-focus assertions. The updated frontend was built and started locally; all three application services were healthy and the working data remained 15 patients/46 notes. Existing seen preferences were preserved, so an account that dismissed the earlier introduction can launch this tutorial from Help. The disposable test project and volumes were removed.
+
+## Tutorial popup position fix
+
+Two regression cases reproduced a popup detached from its search target at 375px and 1024px with a tall viewport. The old fallback pinned it to the viewport bottom. The new placement helper chooses a region adjacent to the control, keeps viewport margins, constrains body height when necessary, and supplies a pointing arrow. Both cases check target separation, proximity, full popup visibility and recomputation after viewport height changes.
+
+The complete focused tutorial suite passed 10/10 in the disposable `medflow-position` project. It includes the existing real-click flow, role/draft replay, history-tab recovery, simulated keyboard viewport, retry and session expiry cases. Phone and tablet screenshots were inspected. Backend code was unchanged and its suite was not rerun for this frontend fix.

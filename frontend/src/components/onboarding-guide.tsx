@@ -72,7 +72,7 @@ export function OnboardingGuide({ user, replay, restoreFocus, patientOpen, direc
   const selector = step === 0 ? compact && !mobile ? '[data-tour="menu"]' : '[data-tour="patients"]'
     : step === 1 ? '[data-tour="search"]' : step === 2 ? '[data-tour="open-patient"]'
     : step === 3 || user.role === 'Administrator' ? '[data-tour="history"]' : '[data-tour="soap-field"] || [data-tour="documentation-tab"]';
-  const { box, x, y, width, limit, keyboard, targetName } = useTourTarget(open, selector, panel);
+  const { box, x, y, width, limit, keyboard, targetName, side } = useTourTarget(open, selector, panel);
   if (!open) return null;
   const titles = ['Open the patient directory', 'Find a patient', 'Open the patient record', 'Review patient history', 'Know your role'];
   const descriptions = [
@@ -94,6 +94,9 @@ export function OnboardingGuide({ user, replay, restoreFocus, patientOpen, direc
     </> : <div className="tour-shade" style={{ inset: 0 }} />}
     <div ref={panel} role="dialog" aria-label={t('Interactive tutorial')} aria-describedby="tutorial-description"
       className="tour-panel" data-keyboard={keyboard || undefined} style={{ left: x, top: y, width, maxHeight: limit }} aria-busy={busy}>
+      {box && <span aria-hidden="true" className={`tour-pointer tour-pointer-${side}`} style={side === 'left' || side === 'right'
+        ? { top: Math.max(22, Math.min((panel.current?.offsetHeight || 280) - 22, box.top + box.height / 2 - y)) }
+        : { left: Math.max(22, Math.min(width - 22, box.left + box.width / 2 - x)) }} />}
       <div className="tour-header"><span><MousePointer2 size={17} aria-hidden="true" />{t('Interactive tutorial')}</span>
         <button className="tour-close" aria-label={t('Close')} onClick={() => void dismiss()} disabled={busy}><X size={18} /></button></div>
       <div className="tour-meta"><p role="status">{t('Step {step} of {total}', { step: step + 1, total: 5 })}</p><LanguageSwitcher /></div>

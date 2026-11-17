@@ -9,6 +9,35 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+for (const width of [375, 1024]) test(`${width}px: teaching popup stays beside its search target`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 1000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Sign in to workspace' }).click();
+  if (width < 801) await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('button', { name: 'Patients', exact: true }).click();
+  if (width < 801) await expect(page.locator('#workspace-navigation')).not.toBeInViewport();
+  const guide = page.getByRole('dialog', { name: 'Interactive tutorial' });
+  const input = page.getByPlaceholder('Search name, Thai name, or patient ID…');
+  await input.fill('Somchai');
+  async function gap() {
+    const tip = (await guide.boundingBox())!;
+    const target = (await input.boundingBox())!;
+    const alignedX = tip.x < target.x + target.width && target.x < tip.x + tip.width;
+    const alignedY = tip.y < target.y + target.height && target.y < tip.y + tip.height;
+    const gaps = [
+      ...(alignedX ? [tip.y - target.y - target.height, target.y - tip.y - tip.height] : []),
+      ...(alignedY ? [tip.x - target.x - target.width, target.x - tip.x - tip.width] : []),
+    ].filter(value => value >= 0);
+    return gaps.length ? Math.min(...gaps) : Infinity;
+  }
+  await expect.poll(gap).toBeLessThanOrEqual(24);
+  await expect(guide).toBeInViewport({ ratio: 1 });
+  await page.setViewportSize({ width, height: 800 });
+  await expect.poll(gap).toBeLessThanOrEqual(24);
+  await expect(guide).toBeInViewport({ ratio: 1 });
+  await page.screenshot({ path: `screenshots/tutorial-position-${width}.png` });
+});
+
 test('teaches real navigation and search then remembers completion', async ({ page, browser }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
