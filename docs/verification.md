@@ -8,7 +8,7 @@ Verified locally on **17 November 2026 (Asia/Bangkok)** using Docker Desktop 28.
 |---|---|
 | `docker compose up --build -d` | Pass; frontend and backend multi-stage images built and all three application services started |
 | `docker compose --profile test run --build --rm backend-tests` | **23 passed**, 0 failed |
-| `docker compose --profile test run --build --rm e2e` | **6 passed**, 0 failed in Chromium |
+| `docker compose --profile test run --build --rm e2e` | **10 passed**, 0 failed in Chromium after the theme/localization update |
 | `docker compose restart` followed by `docker compose up -d --wait` | All three application services healthy; database record fingerprint unchanged |
 | Fresh-volume startup using the optional acceptance override | Three users, 15 patients, 45 confirmed visits, one AI draft, one committed EF migration |
 | Frontend GET `http://localhost:3000` | HTTP 200 |
@@ -59,4 +59,10 @@ Request logs now omit query strings: Nginx logs method/path/status, and ASP.NET 
 
 Deferred minor: the draft-edit API also accepts text edits to unapproved summary suggestions. The UI does not expose that edit path; the server still rejects clinical confirmation of summaries. This does not bypass doctor review or approve a record.
 
-Real clinical accuracy, production deployment, formal accessibility conformance, healthcare certification and security compliance are not verified and are not claimed. The UI is English with Thai patient data, not fully localized. No remote repository or public deployment was created.
+Real clinical accuracy, production deployment, formal accessibility conformance, healthcare certification and security compliance are not verified and are not claimed. The UI now supports Thai and English; clinical source content is kept in its recorded language. No remote repository or public deployment was created.
+
+## Theme and localization follow-up
+
+The frontend has a new white/slate/teal clinical theme with larger text and controls. The humanizer pass replaced promotional headings with functional clinical labels. Thai and English cover navigation, login, patient tables, SOAP controls, review labels, validation, dialogs and notifications. The language preference persists in browser storage; language changes preserve the active draft.
+
+The final browser suite passed **10/10** checks: six existing English workflow checks and four localization checks. These include language changes in save/confirmation notifications and date formatting when browser storage is blocked. Both issues were reproduced by failing tests before being fixed. Desktop Thai, desktop English, Thai login and Thai tablet screenshots were regenerated. The Docker frontend build passed; all three application services remain healthy. Backend source was unchanged by this update.

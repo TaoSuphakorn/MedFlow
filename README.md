@@ -8,6 +8,10 @@ MedFlow AI is a full-stack portfolio MVP with a bilingual patient directory, ele
 
 ![MedFlow AI dashboard](docs/screenshots/dashboard.png)
 
+The interface supports Thai and English. Use **ไทย / EN** on the login screen or in the workspace header; the browser remembers your preference. Source clinical text remains in its recorded language. [Theme and localization details](docs/theme-and-localization.md).
+
+![MedFlow AI dashboard in Thai](docs/screenshots/dashboard-th.png)
+
 ## Quick start
 
 Install and start Docker Engine / Docker Desktop with Docker Compose v2 and Linux containers. No Node.js, npm, .NET SDK, EF CLI or PostgreSQL installation is required.
@@ -172,7 +176,7 @@ docker compose logs --tail=100 postgres
 
 ## Known limitations and next steps
 
-This is a local, single-backend portfolio MVP. It is not suitable for real patient information or clinical care. It has no tenant isolation, account management, password reset, clinical validation, formal compliance controls, tamper-proof audit storage, backups or production secret management. API Swagger is enabled only in the local `Demo` environment. The UI language is English with Thai patient data; it is not a complete Thai translation.
+This is a local, single-backend portfolio MVP. It is not suitable for real patient information or clinical care. It has no tenant isolation, account management, password reset, clinical validation, formal compliance controls, tamper-proof audit storage, backups or production secret management. API Swagger is enabled only in the local `Demo` environment. UI languages are Thai and English; clinical source content and audit action codes are not automatically translated.
 
 AI suggestions can be inaccurate. Real OpenAI calls were not exercised because paid calls require explicit authorization. The healthcare behavior has not been clinically validated. Data-protection keys on the local Docker volume are not encrypted at rest. Login rate limiting is local to the single process; behind Nginx the shared proxy address contributes to its demo-wide limit.
 

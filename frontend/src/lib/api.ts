@@ -87,12 +87,14 @@ export const initials = (name: string) =>
     .slice(0, 2)
     .map((n) => n[0])
     .join('');
-export const date = (value?: string | null) =>
+export const date = (value?: string | null, locale = 'en-GB') =>
   value
-    ? new Intl.DateTimeFormat('en-GB', {
+    ? new Intl.DateTimeFormat(locale, {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
         timeZone: 'Asia/Bangkok',
       }).format(new Date(value))
-    : 'No visit yet';
+    : locale.startsWith('th')
+      ? 'ยังไม่มีการรับบริการ'
+      : 'No visit yet';

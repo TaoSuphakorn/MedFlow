@@ -1,6 +1,8 @@
+import { useLanguage } from '../lib/i18n';
 import { Activity, AlertCircle, LoaderCircle, Search } from 'lucide-react';
 import { initials } from '../lib/api';
 export function Logo() {
+  const { t } = useLanguage();
   return (
     <div className="brand">
       <span className="brand-mark">
@@ -8,7 +10,7 @@ export function Logo() {
       </span>
       <span>
         MedFlow<span className="brand-ai">AI</span>
-        <small>CLINICAL WORKSPACE</small>
+        <small>{t('CLINICAL WORKSPACE')}</small>
       </span>
     </div>
   );
@@ -34,33 +36,36 @@ export function Badge({
   return <span className={`badge badge-${tone}`}>{children}</span>;
 }
 export function Loading() {
+  const { t } = useLanguage();
   return (
     <div className="state">
       <LoaderCircle className="spin" size={26} />
-      <p>Loading your workspace…</p>
+      <p>{t('Loading your workspace…')}</p>
     </div>
   );
 }
 export function ErrorState({ error, retry }: { error: Error; retry: () => void }) {
+  const { t } = useLanguage();
   return (
     <div className="state error-state">
       <AlertCircle size={28} />
-      <h3>We couldn’t load this view</h3>
-      <p>{error.message}</p>
+      <h3>{t('We couldn’t load this view')}</h3>
+      <p>{t(error.message)}</p>
       <button className="btn btn-outline" onClick={retry}>
-        Try again
+        {t('Try again')}
       </button>
     </div>
   );
 }
 export function Empty({ title, text }: { title: string; text: string }) {
+  const { t } = useLanguage();
   return (
     <div className="state">
       <span className="empty-icon">
         <Search size={25} />
       </span>
-      <h3>{title}</h3>
-      <p>{text}</p>
+      <h3>{t(title)}</h3>
+      <p>{t(text)}</p>
     </div>
   );
 }

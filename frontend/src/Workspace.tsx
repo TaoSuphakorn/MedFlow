@@ -1,3 +1,4 @@
+import { useLanguage } from './lib/i18n';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -64,7 +65,7 @@ const sections = [
     key: 'plan' as const,
     letter: 'P',
     label: 'Plan',
-    help: 'The next steps, decided by you.',
+    help: 'Treatment plan and follow-up documented by the clinician.',
     placeholder: 'Document the clinician-reviewed plan and follow-up…',
   },
 ];
@@ -82,6 +83,7 @@ export function Workspace({
   notify: (s: string) => void;
   onDirtyChange: (dirty: boolean) => void;
 }) {
+  const { t, locale } = useLanguage();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['patient', id], queryFn: () => api<Patient>(`/patients/${id}`) });
   const [current, setCurrent] = useState<Note | null>(null);
@@ -203,7 +205,7 @@ export function Workspace({
     <>
       <button className="back-link" onClick={() => guard(onBack)}>
         <ArrowLeft size={16} />
-        Back to patients
+        {t('Back to patients')}
       </button>
       <div className="patient-workspace-heading">
         <div className="profile-title">
@@ -211,22 +213,25 @@ export function Workspace({
           <div>
             <div className="profile-kicker">
               <span>{p.identifier}</span>
-              <Badge tone="teal">SYNTHETIC PATIENT</Badge>
+              <Badge tone="teal">{t('SYNTHETIC PATIENT')}</Badge>
             </div>
             <h1>{p.name}</h1>
             <p lang="th">
               {p.thaiName}
               <span>·</span>
-              {p.age} years<span>·</span>
-              {p.gender}
-              <span>·</span>Blood type {p.bloodType}
+              {p.age} {' ' + t('years')}
+              <span>·</span>
+              {t(p.gender)}
+              <span>·</span>
+              {t('Blood type') + ' '}
+              {p.bloodType}
             </p>
           </div>
         </div>
         {canEdit && (
           <Button variant="outline" onClick={() => guard(() => edit(null))}>
             <Plus size={17} />
-            New SOAP note
+            {t('New SOAP note')}
           </Button>
         )}
       </div>
@@ -234,14 +239,14 @@ export function Workspace({
         <div>
           <History size={17} />
           <span>
-            <strong>Medical history</strong>
+            <strong>{t('Medical history')}</strong>
             <p>{p.history}</p>
           </span>
         </div>
         <div className={p.allergies.startsWith('No ') ? '' : 'allergy'}>
           <AlertCircle size={17} />
           <span>
-            <strong>Allergies</strong>
+            <strong>{t('Allergies')}</strong>
             <p>{p.allergies}</p>
           </span>
         </div>
@@ -249,21 +254,22 @@ export function Workspace({
       <div className="workspace-tabs">
         <button className={tab === 'notes' ? 'selected' : ''} onClick={() => setTab('notes')}>
           <FileText size={17} />
-          Clinical documentation
+          {t('Clinical documentation')}
         </button>
         <button className={tab === 'history' ? 'selected' : ''} onClick={() => setTab('history')}>
           <History size={17} />
-          Visit history<span className="number-badge">{confirmed.length}</span>
+          {t('Visit history')}
+          <span className="number-badge">{confirmed.length}</span>
         </button>
         <span>
           <ShieldCheck size={14} />
-          Clinician-led. Always.
+          {t('Clinician-led. Always.')}
         </span>
       </div>
       {error && (
         <div role="alert" className="error-banner">
           <AlertCircle size={17} />
-          {error}
+          {t(error)}
         </div>
       )}
       <div className="workspace-columns">
@@ -271,18 +277,18 @@ export function Workspace({
           {tab === 'history' ? (
             <section className="card history-card">
               <div className="section-heading">
-                <h2>Original clinical records</h2>
-                <Badge>{confirmed.length} confirmed visits</Badge>
+                <h2>{t('Original clinical records')}</h2>
+                <Badge>{t('Confirmed visits: {count}', { count: confirmed.length })}</Badge>
               </div>
               <p className="muted">
-                Source documentation, separate from unapproved AI suggestions.
+                {t('Source documentation, separate from unapproved AI suggestions.')}
               </p>
               {confirmed.length ? (
                 confirmed.map((n, i) => <Record key={n.id} note={n} defaultOpen={i === 0} />)
               ) : (
                 <Empty
-                  title="No confirmed records yet"
-                  text="Confirmed clinical notes will appear here."
+                  title={t('No confirmed records yet')}
+                  text={t('Confirmed clinical notes will appear here.')}
                 />
               )}
             </section>
@@ -292,21 +298,21 @@ export function Workspace({
                 <div className="draft-picker">
                   <span>
                     <FileText size={16} />
-                    {drafts.length} saved {drafts.length === 1 ? 'draft' : 'drafts'}
+                    {t('Saved drafts: {count}', { count: drafts.length })}
                   </span>
                   <select
-                    aria-label="Open a saved draft"
+                    aria-label={t('Open a saved draft')}
                     value={current?.status === 'Draft' ? current.id : ''}
                     onChange={(e) => {
                       const n = drafts.find((n) => n.id === Number(e.target.value));
                       if (n) guard(() => edit(n));
                     }}
                   >
-                    <option value="">Continue a saved draft…</option>
+                    <option value="">{t('Continue a saved draft…')}</option>
                     {drafts.map((n) => (
                       <option key={n.id} value={n.id}>
-                        {n.aiGenerated ? 'AI Suggested' : 'Manual draft'} · {date(n.createdAt)} · #
-                        {n.id}
+                        {n.aiGenerated ? t('AI Suggested') : t('Manual draft')} ·{' '}
+                        {date(n.createdAt, locale)} · #{n.id}
                       </option>
                     ))}
                   </select>
@@ -315,25 +321,25 @@ export function Workspace({
               <section className="card editor-card">
                 <div className="section-heading">
                   <div>
-                    <div className="eyebrow">CLINICAL DOCUMENTATION</div>
+                    <div className="eyebrow">{t('CLINICAL DOCUMENTATION')}</div>
                     <h2>
                       {current?.status === 'Confirmed'
-                        ? 'Confirmed SOAP note'
+                        ? t('Confirmed SOAP note')
                         : !canEdit && current
-                          ? 'SOAP draft · read only'
-                          : 'SOAP note'}
+                          ? t('SOAP draft · read only')
+                          : t('SOAP note')}
                     </h2>
                   </div>
                   <Badge tone={current?.status === 'Confirmed' ? 'teal' : 'amber'}>
                     {current?.status === 'Confirmed' ? (
                       <>
                         <Check size={12} />
-                        Confirmed
+                        {t('Confirmed')}
                       </>
                     ) : (
                       <>
                         <span className="dot" />
-                        Draft
+                        {t('Draft')}
                       </>
                     )}
                   </Badge>
@@ -342,13 +348,16 @@ export function Workspace({
                   <span>
                     <Clock3 size={14} />
                     {current
-                      ? `Saved ${date(current.updatedAt)} · Version ${current.version}`
-                      : 'New note · not yet saved'}
+                      ? t('Saved {date} · Version {version}', {
+                          date: date(current.updatedAt, locale),
+                          version: current.version,
+                        })
+                      : t('New note · not yet saved')}
                   </span>
                   {current?.aiGenerated && (
                     <Badge tone="purple">
                       <Sparkles size={12} />
-                      AI Suggested
+                      {t('AI Suggested')}
                     </Badge>
                   )}
                 </div>
@@ -356,8 +365,9 @@ export function Workspace({
                   <div className="ai-warning">
                     <Info size={16} />
                     <span>
-                      This is an AI-assisted draft. Verify it against the original records before
-                      confirming.
+                      {t(
+                        'This is an AI-assisted draft. Verify it against the original records before confirming.',
+                      )}
                     </span>
                   </div>
                 )}
@@ -367,13 +377,13 @@ export function Workspace({
                       <div className="soap-label">
                         <span className={`soap-letter letter-${s.letter}`}>{s.letter}</span>
                         <div>
-                          <label htmlFor={s.key}>{s.label}</label>
-                          <small>{s.help}</small>
+                          <label htmlFor={s.key}>{t(s.label)}</label>
+                          <small>{t(s.help)}</small>
                         </div>
                       </div>
                       <textarea
                         id={s.key}
-                        placeholder={s.placeholder}
+                        placeholder={t(s.placeholder)}
                         rows={3}
                         maxLength={8000}
                         readOnly={readOnly}
@@ -382,7 +392,7 @@ export function Workspace({
                       />
                       {form.formState.errors[s.key] && (
                         <small className="field-error">
-                          {form.formState.errors[s.key]?.message}
+                          {t(form.formState.errors[s.key]?.message)}
                         </small>
                       )}
                     </div>
@@ -394,12 +404,12 @@ export function Workspace({
                           {changed ? (
                             <>
                               <span className="dot amber" />
-                              Unsaved changes
+                              {t('Unsaved changes')}
                             </>
                           ) : current ? (
                             <>
                               <Check size={14} />
-                              All changes saved
+                              {t('All changes saved')}
                             </>
                           ) : (
                             'Your note stays a draft until confirmed.'
@@ -407,7 +417,7 @@ export function Workspace({
                         </span>
                         <Button variant="outline" type="submit" disabled={!!busy}>
                           <Save size={16} />
-                          {busy === 'save' ? 'Saving…' : 'Save draft'}
+                          {busy === 'save' ? t('Saving…') : t('Save draft')}
                         </Button>
                       </div>
                       {user.role === 'Doctor' ? (
@@ -415,9 +425,11 @@ export function Workspace({
                           <div>
                             <ShieldCheck size={19} />
                             <span>
-                              <strong>Your review makes it official.</strong>
+                              <strong>{t('Review before confirming')}</strong>
                               <small>
-                                Confirm only when the note reflects your own clinical judgment.
+                                {t(
+                                  'Confirm only when the note reflects your own clinical judgment.',
+                                )}
                               </small>
                             </span>
                           </div>
@@ -429,8 +441,9 @@ export function Workspace({
                               onChange={(e) => setReviewed(e.target.checked)}
                             />
                             <span>
-                              I have reviewed and edited this note and take responsibility for its
-                              content.
+                              {t(
+                                'I have reviewed and edited this note and take responsibility for its content.',
+                              )}
                             </span>
                           </label>
                           <Button
@@ -439,15 +452,18 @@ export function Workspace({
                             onClick={confirm}
                           >
                             <FileCheck2 size={17} />
-                            {busy === 'confirm' ? 'Confirming…' : 'Confirm clinical note'}
+                            {busy === 'confirm' ? t('Confirming…') : t('Confirm clinical note')}
                           </Button>
                           {(!current || changed) && (
-                            <small className="muted">Save your draft before confirming.</small>
+                            <small className="muted">
+                              {t('Save your draft before confirming.')}
+                            </small>
                           )}
                         </div>
                       ) : (
                         <div className="role-note">
-                          <ShieldCheck size={16} />A doctor must review and confirm this draft.
+                          <ShieldCheck size={16} />
+                          {t('A doctor must review and confirm this draft.')}
                         </div>
                       )}
                     </>
@@ -455,8 +471,9 @@ export function Workspace({
                   {current?.status === 'Confirmed' && (
                     <div className="confirmed-notice">
                       <ShieldCheck size={17} />
-                      Confirmed {date(current.confirmedAt)}. Approved records are locked to preserve
-                      the audit trail.
+                      {t('Confirmed') + ' '}
+                      {date(current.confirmedAt, locale)}
+                      {t('. Approved records are locked to preserve the audit trail.')}
                     </div>
                   )}
                 </form>
@@ -465,11 +482,11 @@ export function Workspace({
                 <section className="card source-preview">
                   <div className="section-heading">
                     <div>
-                      <h2>Most recent confirmed visit</h2>
-                      <p className="muted small">Original patient record</p>
+                      <h2>{t('Most recent confirmed visit')}</h2>
+                      <p className="muted small">{t('Original patient record')}</p>
                     </div>
                     <button className="text-link" onClick={() => setTab('history')}>
-                      All visits
+                      {t('All visits')}
                       <ChevronRight size={15} />
                     </button>
                   </div>
@@ -486,18 +503,19 @@ export function Workspace({
                 <Sparkles size={21} />
               </span>
               <div>
-                <h2>Clinical assistant</h2>
-                <span>A starting point. Your final say.</span>
+                <h2>{t('Clinical assistant')}</h2>
+                <span>{t('Drafts from confirmed source records')}</span>
               </div>
             </div>
             <div className="mode-banner">
               <span className="dot" />
-              {user.aiMode === 'Demo' ? 'Demo AI Mode' : 'Live AI Mode'}
-              <Badge tone="purple">{user.aiMode === 'Demo' ? 'SIMULATED' : 'OPENAI'}</Badge>
+              {user.aiMode === 'Demo' ? t('Demo AI Mode') : t('Live AI Mode')}
+              <Badge tone="purple">{user.aiMode === 'Demo' ? t('SIMULATED') : t('OPENAI')}</Badge>
             </div>
             <p className="ai-panel-description">
-              Bring the patient’s history into focus. Every suggestion is grounded in confirmed
-              source records.
+              {t(
+                'Generate a summary or SOAP draft from the confirmed visit history. Review all AI content before use.',
+              )}
             </p>
             {canEdit && (
               <div className="ai-generate-actions">
@@ -515,7 +533,7 @@ export function Workspace({
                   ) : (
                     <WandSparkles size={17} />
                   )}
-                  Generate SOAP draft
+                  {t('Generate SOAP draft')}
                 </Button>
                 <Button
                   variant="outline"
@@ -529,7 +547,7 @@ export function Workspace({
                   ) : (
                     <FileText size={17} />
                   )}
-                  Summarize patient records
+                  {t('Summarize patient records')}
                 </Button>
               </div>
             )}
@@ -538,23 +556,23 @@ export function Workspace({
                 <div className="suggestion-title">
                   <Badge tone="purple">
                     <Sparkles size={12} />
-                    AI Suggested
+                    {t('AI Suggested')}
                   </Badge>
-                  <span>{ai.aiMode} mode</span>
+                  <span>{ai.aiMode === 'Demo' ? t('Demo AI Mode') : t('Live AI Mode')}</span>
                 </div>
-                <h3>Patient story, at a glance</h3>
+                <h3>{t('Patient summary')}</h3>
                 <p>{ai.summary}</p>
                 <div className="information-gap">
                   <span>
                     <AlertCircle size={15} />
-                    Missing information
+                    {t('Missing information')}
                   </span>
                   <p>{ai.missingInformation}</p>
                 </div>
                 <div className="uncertainty-box">
                   <span>
                     <Info size={15} />
-                    Keep in mind
+                    {t('Keep in mind')}
                   </span>
                   <p>{ai.uncertainty}</p>
                 </div>
@@ -564,31 +582,36 @@ export function Workspace({
                 <span className="ai-orb">
                   <Sparkles size={24} />
                 </span>
-                <h3>Ready when you are.</h3>
-                <p>Generate a summary or SOAP draft to begin your review.</p>
+                <h3>{t('No suggestion generated')}</h3>
+                <p>{t('Generate a summary or SOAP draft to begin your review.')}</p>
               </div>
             )}
             <div className="ai-panel-footer">
               <ShieldCheck size={16} />
               <p>
-                AI supports documentation. It does not make clinical decisions or approve records.
+                {t(
+                  'AI supports documentation. It does not make clinical decisions or approve records.',
+                )}
               </p>
             </div>
           </div>
           <div className="workflow-note">
-            <span className="eyebrow">A HUMAN IN EVERY LOOP</span>
+            <span className="eyebrow">{t('REVIEW WORKFLOW')}</span>
             <div>
-              <span>01</span>Generate a suggestion
+              <span>01</span>
+              {t('Generate a suggestion')}
             </div>
             <div>
-              <span>02</span>Review and make it your own
+              <span>02</span>
+              {t('Review and make it your own')}
             </div>
             <div>
-              <span>03</span>Explicitly confirm the note
+              <span>03</span>
+              {t('Explicitly confirm the note')}
             </div>
             <p>
               <Check size={13} />
-              Every confirmation leaves an audit trail.
+              {t('Every confirmation leaves an audit trail.')}
             </p>
           </div>
         </aside>
@@ -598,14 +621,14 @@ export function Workspace({
         onOpenChange={(open) => {
           if (!open) setDiscard(null);
         }}
-        title="Leave unsaved changes?"
+        title={t('Leave unsaved changes?')}
       >
         <p className="muted">
-          Your latest edits have not been saved. Save the draft first to keep them.
+          {t('Your latest edits have not been saved. Save the draft first to keep them.')}
         </p>
         <div className="dialog-actions">
           <Button variant="outline" onClick={() => setDiscard(null)}>
-            Keep editing
+            {t('Keep editing')}
           </Button>
           <Button
             onClick={() => {
@@ -613,7 +636,7 @@ export function Workspace({
               setDiscard(null);
             }}
           >
-            Discard unsaved edits
+            {t('Discard unsaved edits')}
           </Button>
         </div>
       </Dialog>
@@ -622,6 +645,7 @@ export function Workspace({
 }
 
 function Record({ note, defaultOpen = false }: { note: Note; defaultOpen?: boolean }) {
+  const { t, locale } = useLanguage();
   const [open, setOpen] = useState(defaultOpen);
   return (
     <article className="record">
@@ -630,12 +654,14 @@ function Record({ note, defaultOpen = false }: { note: Note; defaultOpen?: boole
           <FileCheck2 size={18} />
         </span>
         <span>
-          <strong>{date(note.createdAt)}</strong>
+          <strong>{date(note.createdAt, locale)}</strong>
           <small>
-            {note.aiGenerated ? 'Clinician-confirmed · AI-assisted' : 'Confirmed clinical record'}
+            {note.aiGenerated
+              ? t('Clinician-confirmed · AI-assisted')
+              : t('Confirmed clinical record')}
           </small>
         </span>
-        <Badge tone="teal">Confirmed</Badge>
+        <Badge tone="teal">{t('Confirmed')}</Badge>
         <ChevronDown size={16} className={open ? 'rotated' : ''} />
       </button>
       {open && (
@@ -644,7 +670,7 @@ function Record({ note, defaultOpen = false }: { note: Note; defaultOpen?: boole
             <div key={s.key}>
               <span>{s.letter}</span>
               <div>
-                <h4>{s.label}</h4>
+                <h4>{t(s.label)}</h4>
                 <p>{note[s.key]}</p>
               </div>
             </div>

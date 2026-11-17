@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('medflow.language', 'en'));
+});
+
 test('Thai SOAP field limits fit through Nginx and Kestrel', async ({ request }) => {
   let token = (await (await request.get('/api/auth/csrf')).json()).token;
   expect(
@@ -27,7 +31,7 @@ test('doctor reviews AI, edits draft, explicitly confirms and reopens saved note
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Sign in to workspace' }).click();
-  await expect(page.getByRole('heading', { name: 'Your day, at a glance.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Clinical overview' })).toBeVisible();
   await page.screenshot({ path: 'screenshots/dashboard.png', fullPage: true });
   await page.getByRole('button', { name: 'Patients', exact: true }).click();
   await page.getByPlaceholder('Search name, Thai name, or patient ID…').fill('SYN-1001');

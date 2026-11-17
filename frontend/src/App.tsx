@@ -1,3 +1,4 @@
+import { LanguageSwitcher, useLanguage } from './lib/i18n';
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -5,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   Activity,
-  ArrowDownLeft,
   ArrowRight,
   ArrowUpRight,
   BookOpen,
@@ -25,7 +25,6 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
-  Stethoscope,
   Users,
   X,
 } from 'lucide-react';
@@ -41,6 +40,7 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 function Login({ onLogin }: { onLogin: () => void }) {
+  const { t } = useLanguage();
   const [role, setRole] = useState('doctor');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -71,39 +71,43 @@ function Login({ onLogin }: { onLogin: () => void }) {
       <section className="login-story">
         <Logo />
         <div className="login-copy">
-          <span className="eyebrow light">LESS ADMIN. MORE HUMAN.</span>
+          <span className="eyebrow light">{t('CLINICAL WORKSPACE')}</span>
           <h1>
-            More time for
+            {t('Clinical records,')}
             <br />
-            the person
-            <br />
-            <span>behind the patient.</span>
+            <span>{t('ready for review.')}</span>
           </h1>
           <p>
-            A connected clinical workspace that brings patient records, thoughtful AI assistance,
-            and your expertise together.
+            {t(
+              'Review patient history, write clinical notes, and use AI to prepare drafts for your review.',
+            )}
           </p>
           <div className="login-feature">
             <ShieldCheck />
             <span>
-              AI assists. You stay in control.
-              <small>Every suggestion requires a clinician’s review.</small>
+              {t('Every clinical note requires your review.')}
+              <small>{t('Every suggestion requires a clinician’s review.')}</small>
             </span>
           </div>
         </div>
-        <p className="login-story-footer">Built for thoughtful care. Designed around you.</p>
+        <p className="login-story-footer">
+          {t('Synthetic patient data for portfolio demonstration.')}
+        </p>
         <div className="story-orbit orbit-one" />
         <div className="story-orbit orbit-two" />
       </section>
       <section className="login-form-side">
+        <div className="login-language">
+          <LanguageSwitcher />
+        </div>
         <div className="login-form">
           <Badge tone="teal">
-            <span className="dot" /> INTERACTIVE PORTFOLIO DEMO
+            <span className="dot" /> {' ' + t('INTERACTIVE PORTFOLIO DEMO')}
           </Badge>
-          <h2>Welcome to MedFlow</h2>
-          <p className="muted">A little less paperwork. A little more possibility.</p>
+          <h2>{t('Welcome to MedFlow')}</h2>
+          <p className="muted">{t('Sign in to review patient records and clinical notes.')}</p>
           <div className="demo-selector">
-            <label>EXPLORE A DEMO ROLE</label>
+            <label>{t('EXPLORE A DEMO ROLE')}</label>
             <div>
               {[
                 ['doctor', 'Doctor'],
@@ -118,46 +122,50 @@ function Login({ onLogin }: { onLogin: () => void }) {
                     form.setValue('email', `${key}@medflow.demo`);
                   }}
                 >
-                  {label}
+                  {t(label)}
                 </button>
               ))}
             </div>
           </div>
           <form onSubmit={form.handleSubmit(submit)}>
-            <label htmlFor="email">Email address</label>
+            <label htmlFor="email">{t('Email address')}</label>
             <input id="email" autoComplete="username" {...form.register('email')} />
-            <small className="field-error">{form.formState.errors.email?.message}</small>
-            <label htmlFor="password">Password</label>
+            <small className="field-error">{t(form.formState.errors.email?.message)}</small>
+            <label htmlFor="password">{t('Password')}</label>
             <input
               id="password"
               type="password"
               autoComplete="current-password"
               {...form.register('password')}
             />
-            <small className="field-error">{form.formState.errors.password?.message}</small>
+            <small className="field-error">{t(form.formState.errors.password?.message)}</small>
             {error && (
               <p role="alert" className="error-banner">
-                {error}
+                {t(error)}
               </p>
             )}
             <Button type="submit" disabled={busy}>
-              {busy ? 'Signing in…' : 'Sign in to workspace'}
+              {busy ? t('Signing in…') : t('Sign in to workspace')}
               <ArrowRight size={17} />
             </Button>
           </form>
           <div className="login-demo-note">
             <Sparkles size={18} />
             <p>
-              <strong>Ready to explore. No setup needed.</strong>
+              <strong>{t('Demo accounts are ready to use.')}</strong>
               <br />
-              Demo credentials are prefilled. All patient data is fictional. AI runs in demo mode
-              unless configured.
+              {t(
+                'Demo credentials are prefilled. All patient data is fictional. AI runs in demo mode unless configured.',
+              )}
             </p>
           </div>
-          <p className="demo-disclaimer">Portfolio demonstration only — Not for clinical use.</p>
+          <p className="demo-disclaimer">
+            {t('Portfolio demonstration only — Not for clinical use.')}
+          </p>
         </div>
         <span className="login-bottom">
-          MEDFLOW AI <span>•</span> A FULL-STACK PORTFOLIO PROJECT
+          {t('MEDFLOW AI') + ' '}
+          <span>•</span> {' ' + t('A FULL-STACK PORTFOLIO PROJECT')}
         </span>
       </section>
     </div>
@@ -165,6 +173,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
 }
 
 export default function App() {
+  const { t, locale } = useLanguage();
   const qc = useQueryClient();
   const [view, setView] = useState<View>('Overview');
   const [patient, setPatient] = useState<number | null>(null);
@@ -244,7 +253,7 @@ export default function App() {
       {mobile && <div className="sidebar-scrim" onClick={() => setMobile(false)} />}
       <aside className={`sidebar ${mobile ? 'is-open' : ''}`}>
         <Logo />
-        <div className="workspace-label">WORKSPACE</div>
+        <div className="workspace-label">{t('WORKSPACE')}</div>
         <nav>
           {nav.map(({ name, icon: Icon }) => (
             <button
@@ -257,7 +266,7 @@ export default function App() {
               onClick={() => navigate(name)}
             >
               <Icon size={19} />
-              <span>{name}</span>
+              <span>{t(name)}</span>
               {name === 'Drafts' && <span className="nav-count">{drafts}</span>}
             </button>
           ))}
@@ -267,33 +276,29 @@ export default function App() {
           <span className="ai-orb">
             <Sparkles size={20} />
           </span>
-          <h4>A thoughtful second look</h4>
-          <p>
-            Documentation support,
-            <br />
-            with you in control.
-          </p>
+          <h4>{t('Documentation assistant')}</h4>
+          <p>{t('AI suggestions require clinician review.')}</p>
           <span className="ai-card-mode">
             <span className="dot" />
-            {user.aiMode === 'Demo' ? 'Demo AI Mode' : 'Live AI Mode'}
+            {user.aiMode === 'Demo' ? t('Demo AI Mode') : t('Live AI Mode')}
           </span>
         </div>
         <button className="nav-item" onClick={() => setSettings(true)}>
           <Settings2 size={19} />
-          <span>Workspace settings</span>
+          <span>{t('Workspace settings')}</span>
         </button>
         <button className="nav-item" onClick={() => setHelp(true)}>
           <CircleHelp size={19} />
-          <span>Help & demo guide</span>
+          <span>{t('Help & demo guide')}</span>
           <ArrowUpRight size={15} />
         </button>
         <div className="sidebar-user">
           <Avatar name={user.name} />
           <span>
             <strong>{user.name}</strong>
-            <small>{user.role}</small>
+            <small>{t(user.role)}</small>
           </span>
-          <button aria-label="Sign out" onClick={logout}>
+          <button aria-label={t('Sign out')} onClick={logout}>
             <LogOut size={16} />
           </button>
         </div>
@@ -303,19 +308,20 @@ export default function App() {
           <div className="breadcrumb">
             <button
               className="mobile-menu"
-              aria-label="Open navigation"
+              aria-label={t('Open navigation')}
               onClick={() => setMobile(true)}
             >
               <Menu size={21} />
             </button>
-            <span>Workspace</span>
+            <span>{t('Workspace')}</span>
             <ChevronRight size={14} />
-            <strong>{patient ? 'Patient workspace' : view}</strong>
+            <strong>{patient ? t('Patient workspace') : t(view)}</strong>
           </div>
           <div className="topbar-right">
+            <LanguageSwitcher />
             <span className="synthetic-label">
               <ShieldCheck size={14} />
-              Synthetic data only
+              {t('Synthetic data only')}
             </span>
             <span className="topbar-divider" />
             <Avatar name={user.name} />
@@ -346,58 +352,58 @@ export default function App() {
             <>
               <div className="page-heading">
                 <div>
-                  <div className="eyebrow">YOUR CLINICAL WORKSPACE</div>
+                  <div className="eyebrow">{t('YOUR CLINICAL WORKSPACE')}</div>
                   <h1>
                     {view === 'Overview'
-                      ? 'Your day, at a glance.'
+                      ? t('Clinical overview')
                       : view === 'Drafts'
-                        ? 'A little review goes a long way.'
-                        : 'Good care starts with knowing.'}
+                        ? t('Drafts awaiting review')
+                        : t('Patient directory')}
                   </h1>
                   <p>
                     {view === 'Overview'
-                      ? `Welcome back, ${user.name.split(' ').slice(0, 2).join(' ')}. Let’s make room for what matters.`
+                      ? t('Review patient records and pending clinical documentation.')
                       : view === 'Drafts'
-                        ? 'Pick up unfinished notes and review AI suggestions.'
-                        : 'Find a patient, review their story, and keep care moving.'}
+                        ? t('Pick up unfinished notes and review AI suggestions.')
+                        : t('Search patients and open their clinical records.')}
                   </p>
                 </div>
                 <div className="date-pill">
                   <CalendarDays size={16} />
-                  {date(new Date().toISOString())}
+                  {date(new Date().toISOString(), locale)}
                 </div>
               </div>
               {view === 'Overview' && (
                 <>
                   <div className="stats-grid">
                     <Stat
-                      label="Patients in workspace"
+                      label={t('Patients in workspace')}
                       value={String(list.length).padStart(2, '0')}
-                      detail="Fictional patient profiles"
+                      detail={t('Fictional patient profiles')}
                       icon={<Users />}
                       tone="teal"
                     />
                     <Stat
-                      label="Confirmed records"
+                      label={t('Confirmed records')}
                       value={list.reduce((n, p) => n + p.visitCount, 0).toString()}
-                      detail="Clinician-reviewed SOAP notes"
+                      detail={t('Clinician-reviewed SOAP notes')}
                       icon={<ClipboardCheck />}
                       tone="blue"
                     />
                     <Stat
-                      label="Drafts to review"
+                      label={t('Drafts to review')}
                       value={String(drafts).padStart(2, '0')}
-                      detail="Your expertise is the next step"
+                      detail={t('Awaiting clinician review')}
                       icon={<FileClock />}
                       tone="amber"
                     />
                     <Stat
-                      label="AI assistance"
-                      value={user.aiMode === 'Demo' ? 'Demo' : 'Live'}
+                      label={t('AI assistance')}
+                      value={user.aiMode === 'Demo' ? t('Demo') : t('Live')}
                       detail={
                         user.aiMode === 'Demo'
-                          ? 'Deterministic · no API key needed'
-                          : 'OpenAI · clinician review required'
+                          ? t('Deterministic · no API key needed')
+                          : t('OpenAI · clinician review required')
                       }
                       icon={<Sparkles />}
                       tone="purple"
@@ -408,20 +414,20 @@ export default function App() {
                       <div className="welcome-banner">
                         <div>
                           <span className="banner-eyebrow">
-                            <span className="dot" /> HUMAN EXPERTISE. THOUGHTFUL AI.
+                            <span className="dot" /> {' ' + t('PATIENT DOCUMENTATION')}
                           </span>
                           <h2>
-                            Less time documenting.
+                            {t('Patient records,')}
                             <br />
-                            More time connecting.
+                            {t('ready for review.')}
                           </h2>
                           <p>
-                            Turn patient history into a starting point.
+                            {t('Review previous visits and write a SOAP note.')}
                             <br />
-                            Review, refine, and make it your own.
+                            {t('AI drafts are available when you need them.')}
                           </p>
                           <Button variant="secondary" onClick={() => navigate('Patients')}>
-                            Open patient workspace
+                            {t('Open patient workspace')}
                             <ArrowRight size={16} />
                           </Button>
                         </div>
@@ -461,65 +467,66 @@ export default function App() {
                           <span className="icon-tile purple">
                             <Sparkles size={18} />
                           </span>
-                          <Badge tone="purple">AI ASSISTANT</Badge>
+                          <Badge tone="purple">{t('AI ASSISTANT')}</Badge>
                         </div>
                         <h3>
-                          A head start.
+                          {t('AI documentation')}
                           <br />
-                          Never the final say.
+                          {t('assistant')}
                         </h3>
-                        <p>
-                          Bring the patient’s story together, while keeping your clinical judgment
-                          at the center.
-                        </p>
+                        <p>{t('Summaries and SOAP drafts use the patient’s confirmed records.')}</p>
                         <div className="assistant-feature">
                           <FileText size={17} />
                           <div>
-                            <strong>Patient summaries</strong>
-                            <small>The relevant history, in one place.</small>
+                            <strong>{t('Patient summaries')}</strong>
+                            <small>{t('Review the confirmed visit history.')}</small>
                           </div>
                         </div>
                         <div className="assistant-feature">
                           <BookOpen size={17} />
                           <div>
-                            <strong>SOAP draft assistance</strong>
-                            <small>A starting point you can shape.</small>
+                            <strong>{t('SOAP draft assistance')}</strong>
+                            <small>{t('Edit each section before confirming.')}</small>
                           </div>
                         </div>
                         <div className="assistant-feature">
                           <ShieldCheck size={17} />
                           <div>
-                            <strong>You review. You confirm.</strong>
-                            <small>Nothing is approved automatically.</small>
+                            <strong>{t('Doctor confirmation required')}</strong>
+                            <small>{t('Nothing is approved automatically.')}</small>
                           </div>
                         </div>
                         <div className="assistant-disclosure">
                           <span className="dot" />
                           {user.aiMode === 'Demo'
-                            ? 'Demo AI Mode · simulated responses'
-                            : 'Live AI Mode · OpenAI integration'}
+                            ? t('Demo AI Mode · simulated responses')
+                            : t('Live AI Mode · OpenAI integration')}
                         </div>
                       </div>
                       <div className="card review-card">
                         <div className="card-title">
-                          <h3>Ready for your review</h3>
+                          <h3>{t('Ready for your review')}</h3>
                           <FileClock size={17} />
                         </div>
                         {drafts ? (
                           <>
                             <div className="review-count">
                               {drafts}
-                              <span>unfinished {drafts === 1 ? 'draft' : 'drafts'}</span>
+                              <span>{t('drafts awaiting review')}</span>
                             </div>
-                            <p>Every thoughtful review makes the record a little clearer.</p>
+                            <p>
+                              {t(
+                                'Open a saved draft to continue editing or review an AI suggestion.',
+                              )}
+                            </p>
                             <button className="text-link" onClick={() => navigate('Drafts')}>
-                              Review drafts
+                              {t('Review drafts')}
                               <ArrowRight size={15} />
                             </button>
                           </>
                         ) : (
                           <>
-                            <p>You’re all caught up. New drafts will appear here.</p>
+                            <p>{t('No drafts are awaiting review.')}</p>
                             <Check className="teal-text" />
                           </>
                         )}
@@ -542,17 +549,17 @@ export default function App() {
           <footer className="page-footer">
             <span>
               <Activity size={14} />
-              Thoughtfully connected. Human-led care.
+              {t('MedFlow AI · Clinical workspace')}
             </span>
-            <span>Portfolio demonstration only — Not for clinical use.</span>
+            <span>{t('Portfolio demonstration only — Not for clinical use.')}</span>
           </footer>
         </main>
       </div>
       {toast && (
         <div className="toast" role="status">
           <Check size={18} />
-          <span>{toast}</span>
-          <button aria-label="Dismiss notification" onClick={() => setToast('')}>
+          <span>{t(toast)}</span>
+          <button aria-label={t('Dismiss notification')} onClick={() => setToast('')}>
             <X size={15} />
           </button>
         </div>
@@ -562,14 +569,14 @@ export default function App() {
         onOpenChange={(open) => {
           if (!open) setPendingNavigation(null);
         }}
-        title="Leave unsaved changes?"
+        title={t('Leave unsaved changes?')}
       >
         <p className="muted">
-          Your latest SOAP edits have not been saved. Save the draft first to keep them.
+          {t('Your latest SOAP edits have not been saved. Save the draft first to keep them.')}
         </p>
         <div className="dialog-actions">
           <Button variant="outline" onClick={() => setPendingNavigation(null)}>
-            Keep editing
+            {t('Keep editing')}
           </Button>
           <Button
             onClick={() => {
@@ -577,60 +584,69 @@ export default function App() {
               setPendingNavigation(null);
             }}
           >
-            Discard unsaved edits
+            {t('Discard unsaved edits')}
           </Button>
         </div>
       </Dialog>
-      <Dialog open={help} onOpenChange={setHelp} title="Explore the MedFlow demo">
+      <Dialog open={help} onOpenChange={setHelp} title={t('Explore the MedFlow demo')}>
         <div className="help-content">
           <p>
-            All records belong to fictional patients. This portfolio application must never be used
-            for clinical care.
+            {t(
+              'All records belong to fictional patients. This portfolio application must never be used for clinical care.',
+            )}
           </p>
           <ol>
             <li>
-              Open <strong>Patients</strong> and choose Somchai Jaidee.
+              {t('Open') + ' '}
+              <strong>{t('Patients')}</strong> {' ' + t('and choose Somchai Jaidee.')}
             </li>
-            <li>Review original, confirmed visits in the patient timeline.</li>
-            <li>Generate a SOAP draft or a summary with the AI assistant.</li>
-            <li>Edit the four SOAP sections and save your draft.</li>
-            <li>As a doctor, check the review attestation and explicitly confirm.</li>
+            <li>{t('Review original, confirmed visits in the patient timeline.')}</li>
+            <li>{t('Generate a SOAP draft or a summary with the AI assistant.')}</li>
+            <li>{t('Edit the four SOAP sections and save your draft.')}</li>
+            <li>{t('As a doctor, check the review attestation and explicitly confirm.')}</li>
           </ol>
           <p>
-            Nurses can write drafts. Administrators can inspect the audit log. Only doctors can
-            confirm clinical notes.
+            {t(
+              'Nurses can write drafts. Administrators can inspect the audit log. Only doctors can confirm clinical notes.',
+            )}
           </p>
           <p>
-            <strong>Demo AI Mode</strong> uses deterministic simulated responses. Configuring an
-            OpenAI key enables live assistance.
+            <strong>{t('Demo AI Mode')}</strong>{' '}
+            {' ' +
+              t(
+                'uses deterministic simulated responses. Configuring an OpenAI key enables live assistance.',
+              )}
           </p>
         </div>
       </Dialog>
-      <Dialog open={settings} onOpenChange={setSettings} title="Workspace settings">
+      <Dialog open={settings} onOpenChange={setSettings} title={t('Workspace settings')}>
         <div className="help-content">
           <div className="setting-row">
-            <span>Signed in as</span>
+            <span>{t('Signed in as')}</span>
             <strong>{user.name}</strong>
           </div>
           <div className="setting-row">
-            <span>Access role</span>
-            <Badge tone="teal">{user.role}</Badge>
+            <span>{t('Access role')}</span>
+            <Badge tone="teal">{t(user.role)}</Badge>
           </div>
           <div className="setting-row">
-            <span>AI connection</span>
-            <Badge tone="purple">{user.aiMode} AI Mode</Badge>
+            <span>{t('AI connection')}</span>
+            <Badge tone="purple">
+              {user.aiMode === 'Demo' ? t('Demo AI Mode') : t('Live AI Mode')}
+            </Badge>
           </div>
           <div className="setting-row">
-            <span>Clinical data</span>
-            <span>Synthetic only</span>
+            <span>{t('Clinical data')}</span>
+            <span>{t('Synthetic only')}</span>
           </div>
           <p>
-            AI mode is configured securely on the server. See the README for environment settings.
-            Session cookies expire after four hours.
+            {t(
+              'AI mode is configured securely on the server. See the README for environment settings. Session cookies expire after four hours.',
+            )}
           </p>
           <Button variant="outline" onClick={logout}>
             <LogOut size={16} />
-            Sign out
+            {t('Sign out')}
           </Button>
         </div>
       </Dialog>
@@ -651,16 +667,17 @@ function Stat({
   icon: React.ReactNode;
   tone: string;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="card stat-card">
       <div>
-        <span className="stat-label">{label}</span>
+        <span className="stat-label">{t(label)}</span>
         <span className={`icon-tile ${tone}`}>{icon}</span>
       </div>
-      <strong>{value}</strong>
+      <strong>{t(value)}</strong>
       <small>
         <span className={`dot ${tone}`} />
-        {detail}
+        {t(detail)}
       </small>
     </div>
   );
@@ -683,6 +700,7 @@ function PatientTable({
   draftsOnly?: boolean;
   onViewAll?: () => void;
 }) {
+  const { t, locale } = useLanguage();
   const [category, setCategory] = useState('All patients');
   const filtered = patients.filter(
     (p) =>
@@ -695,21 +713,21 @@ function PatientTable({
         <div>
           <h2>
             {compact
-              ? 'Patient overview'
+              ? t('Patient overview')
               : draftsOnly
-                ? 'Patients with pending drafts'
-                : 'Patient directory'}
+                ? t('Patients with pending drafts')
+                : t('Patient directory')}
             <span className="number-badge">{patients.length}</span>
           </h2>
           <p>
             {compact
-              ? 'A familiar face. A complete picture.'
-              : 'All fictional profiles, securely in one workspace.'}
+              ? t('Open a patient to review their records.')
+              : t('Fictional patient profiles for this demonstration.')}
           </p>
         </div>
         {compact && (
           <button className="text-link" onClick={onViewAll}>
-            View all patients
+            {t('View all patients')}
             <ArrowRight size={15} />
           </button>
         )}
@@ -718,13 +736,13 @@ function PatientTable({
         <div className="search-field">
           <Search size={17} />
           <input
-            placeholder="Search name, Thai name, or patient ID…"
+            placeholder={t('Search name, Thai name, or patient ID…')}
             value={search}
             maxLength={100}
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button aria-label="Clear search" onClick={() => setSearch('')}>
+            <button aria-label={t('Clear search')} onClick={() => setSearch('')}>
               <X size={15} />
             </button>
           )}
@@ -732,12 +750,14 @@ function PatientTable({
         <div className="select-wrap">
           <Settings2 size={15} />
           <select
-            aria-label="Filter patients"
+            aria-label={t('Filter patients')}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
             {['All patients', 'Follow-up', 'New visit', 'Routine check'].map((x) => (
-              <option key={x}>{x}</option>
+              <option key={x} value={x}>
+                {t(x)}
+              </option>
             ))}
           </select>
           <ChevronDown size={13} />
@@ -748,12 +768,12 @@ function PatientTable({
           <table>
             <thead>
               <tr>
-                <th>Patient</th>
-                <th>Patient ID</th>
-                <th>Age / Sex</th>
-                {!compact && <th>Last visit</th>}
-                <th>{draftsOnly ? 'Pending review' : 'Visit type'}</th>
-                <th aria-label="Open patient" />
+                <th>{t('Patient')}</th>
+                <th>{t('Patient ID')}</th>
+                <th>{t('Age / Sex')}</th>
+                {!compact && <th>{t('Last visit')}</th>}
+                <th>{draftsOnly ? t('Pending review') : t('Visit type')}</th>
+                <th aria-label={t('Open patient')} />
               </tr>
             </thead>
             <tbody>
@@ -773,10 +793,11 @@ function PatientTable({
                   </td>
                   <td>
                     <span className="age-sex">
-                      {p.age} yrs <span>·</span> {p.gender === 'Male' ? 'M' : 'F'}
+                      {p.age} {' ' + t('yrs') + ' '}
+                      <span>·</span> {t(p.gender === 'Male' ? 'M' : 'F')}
                     </span>
                   </td>
-                  {!compact && <td className="date-cell">{date(p.lastVisit)}</td>}
+                  {!compact && <td className="date-cell">{date(p.lastVisit, locale)}</td>}
                   <td>
                     <Badge
                       tone={
@@ -789,13 +810,15 @@ function PatientTable({
                               : 'neutral'
                       }
                     >
-                      {draftsOnly ? `${p.draftCount} drafts` : p.category}
+                      {draftsOnly
+                        ? t('Pending drafts: {count}', { count: p.draftCount })
+                        : t(p.category)}
                     </Badge>
                   </td>
                   <td>
                     <button
                       className="open-patient"
-                      aria-label={`Open ${p.name.split(' ')[0]}`}
+                      aria-label={`${t('Open')} ${p.name.split(' ')[0]}`}
                       onClick={() => onOpen(p.id)}
                     >
                       <ArrowUpRight size={18} />
@@ -807,12 +830,17 @@ function PatientTable({
           </table>
         </div>
       ) : (
-        <Empty title="No patients found" text="Try another name, patient ID, or visit type." />
+        <Empty
+          title={t('No patients found')}
+          text={t('Try another name, patient ID, or visit type.')}
+        />
       )}
       <div className="table-footer">
         <span>
-          Showing {filtered.length} {filtered.length === 1 ? 'patient' : 'patients'}
-          <span className="footer-dot">·</span>Synthetic demo records
+          {t('Showing') + ' '}
+          {filtered.length} {filtered.length === 1 ? t('patient') : t('patients')}
+          <span className="footer-dot">·</span>
+          {t('Synthetic demo records')}
         </span>
         <ShieldCheck size={14} />
       </div>
@@ -820,6 +848,7 @@ function PatientTable({
   );
 }
 function Audit() {
+  const { t, locale } = useLanguage();
   const q = useQuery({
     queryKey: ['audit'],
     queryFn: () =>
@@ -838,11 +867,12 @@ function Audit() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">ACCOUNTABILITY, BUILT IN</div>
-          <h1>Workspace audit log</h1>
+          <div className="eyebrow">{t('ACTIVITY AND ACCESS')}</div>
+          <h1>{t('Workspace audit log')}</h1>
           <p>
-            A record of access, changes, and clinician decisions. Clinical payloads are never
-            logged.
+            {t(
+              'A record of access, changes, and clinician decisions. Clinical payloads are never logged.',
+            )}
           </p>
         </div>
         <Button
@@ -851,7 +881,7 @@ function Audit() {
             void q.refetch();
           }}
         >
-          Refresh log
+          {t('Refresh log')}
         </Button>
       </div>
       <div className="card">
@@ -869,11 +899,11 @@ function Audit() {
             <table>
               <thead>
                 <tr>
-                  <th>Event</th>
-                  <th>Timestamp (Bangkok)</th>
-                  <th>User</th>
-                  <th>Patient</th>
-                  <th>Note</th>
+                  <th>{t('Event')}</th>
+                  <th>{t('Timestamp (Bangkok)')}</th>
+                  <th>{t('User')}</th>
+                  <th>{t('Patient')}</th>
+                  <th>{t('Note')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -884,8 +914,8 @@ function Audit() {
                         {e.action}
                       </Badge>
                     </td>
-                    <td>{new Date(e.at).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}</td>
-                    <td>{e.userId ? `User ${e.userId}` : 'Anonymous'}</td>
+                    <td>{new Date(e.at).toLocaleString(locale, { timeZone: 'Asia/Bangkok' })}</td>
+                    <td>{e.userId ? t('User {id}', { id: e.userId }) : t('Anonymous')}</td>
                     <td>{e.patientId || '—'}</td>
                     <td>{e.noteId || '—'}</td>
                   </tr>
@@ -895,7 +925,7 @@ function Audit() {
           </div>
         )}
       </div>
-      <p className="muted small">Showing the 200 most recent events.</p>
+      <p className="muted small">{t('Showing the 200 most recent events.')}</p>
     </>
   );
 }
