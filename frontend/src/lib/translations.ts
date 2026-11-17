@@ -1,5 +1,17 @@
 // Clinical source content is deliberately excluded from UI localization.
 export const thai: Record<string, string> = {
+  'Interactive tutorial': 'ระบบสอนใช้งาน',
+  'Click Clinical documentation to see the SOAP fields.': 'กดแท็บบันทึกการรักษาที่ไฮไลต์เพื่อดูช่องเขียน SOAP',
+  'Use this field for reported symptoms. Complete all four SOAP sections, then save and review the draft yourself.': 'ช่องนี้ใช้บันทึกอาการที่ผู้ป่วยแจ้ง เขียนให้ครบทั้งสี่ส่วนของ SOAP แล้วบันทึกและตรวจทานด้วยตัวเอง',
+  'Open the patient directory': 'เปิดทะเบียนผู้ป่วย',
+  'Click the highlighted menu button to start.': 'กดปุ่มเมนูที่ไฮไลต์เพื่อเริ่มใช้งาน',
+  'Click Patients in the highlighted menu to continue.': 'กดเมนูผู้ป่วยที่ไฮไลต์เพื่อไปต่อ',
+  'Type a name or patient ID in the highlighted search box, then choose Next.': 'ลองพิมพ์ชื่อหรือรหัสผู้ป่วยในช่องค้นหาที่ไฮไลต์ แล้วกดถัดไป',
+  'Open the patient record': 'เปิดข้อมูลผู้ป่วย',
+  'Click the highlighted arrow to open the patient record.': 'กดลูกศรที่ไฮไลต์เพื่อเปิดข้อมูลผู้ป่วย',
+  'Review patient history': 'ดูประวัติผู้ป่วย',
+  'This area shows the patient history and allergies. Review it before preparing a note.': 'ส่วนนี้แสดงประวัติผู้ป่วยและประวัติการแพ้ โปรดอ่านก่อนเขียนบันทึกใหม่',
+  'Waiting for the highlighted control. If there are no results, go back and change the search.': 'กำลังรอส่วนที่ต้องการ หากไม่พบผู้ป่วย ให้กดย้อนกลับแล้วเปลี่ยนคำค้นหา',
   'Welcome to your workspace': 'ยินดีต้อนรับสู่พื้นที่ทำงาน',
   'Use Next and Previous to explore the guide, or skip it and reopen it from Help.': 'กดถัดไปหรือย้อนกลับเพื่อดูบทสอน หรือข้ามแล้วเปิดใหม่จากเมนูช่วยเหลือได้',
   'Step {step} of {total}': 'ขั้นตอนที่ {step} จาก {total}',

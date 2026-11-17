@@ -8,7 +8,7 @@ Verified locally on **17 November 2026 (Asia/Bangkok)** using Docker Desktop 28.
 |---|---|
 | `docker compose up --build -d` | Pass; frontend and backend multi-stage images built and all three application services started |
 | `docker compose --profile test run --build --rm backend-tests` | **31 passed**, 0 failed after account onboarding persistence/security coverage |
-| `docker compose --profile test run --build --rm e2e` using the isolated CI override | **30 passed**, 0 failed after first-login guide coverage |
+| `docker compose --profile test run --build --rm e2e` using the isolated CI override | **31 passed**, 0 failed after interactive tutorial coverage |
 | `docker compose restart` followed by `docker compose up -d --wait` | All three application services healthy; database record fingerprint unchanged |
 | Fresh-volume startup using the optional acceptance override | Three users, 15 patients, 45 confirmed visits, one AI draft, one committed EF migration |
 | Frontend GET `http://localhost:3000` | HTTP 200 |
@@ -106,3 +106,11 @@ The full browser suite passed 30/30 using the disposable `medflow-onboarding` Co
 Both application images built and started locally. The automatic nullable-column migration preserved the freshly reset working data: `3|15|45|1|2` for users/patients/confirmed notes/AI drafts/migrations, and all three accounts remained unseen (`OnboardingSeenAt` null). Browser writes ran only in the disposable project, not the working demo. No paid AI request or publication was performed. See [guide behavior and API details](first-login-guide.md).
 
 After the final login-state reset refactor, 11 focused guide/session tests passed. The disposable Compose project and its volumes were removed, and the temporary backend test database was stopped. The three working application services remained healthy.
+
+## Interactive tutorial follow-up
+
+The introduction was replaced with spotlights on real controls and interaction-gated progression. The full browser suite passed 31/31 in the isolated `medflow-tutorial` project. Tests include actual drawer/Patients clicks, searching, opening a patient, server persistence, three roles, replay over unsaved text, failed dismissal and session expiry. Review regressions reproduced a stall when replaying from Visit history and a panel hidden by a reduced visual viewport; both passed after adding an actual documentation-tab target and visual viewport positioning. A drawer-animation regression also passed after transition tracking was added.
+
+Desktop/phone screenshots were inspected. The viewport test simulates keyboard-induced viewport reduction; physical mobile keyboards and full screen-reader behavior remain unverified. The backend is unchanged and retains its previously verified 31 cases. No AI generation, clinical save or clinical confirmation is performed by the tutorial. The working demo's 46 notes were preserved.
+
+Eight focused tutorial cases passed again after strengthening empty-result recovery and keyboard-focus assertions. The updated frontend was built and started locally; all three application services were healthy and the working data remained 15 patients/46 notes. Existing seen preferences were preserved, so an account that dismissed the earlier introduction can launch this tutorial from Help. The disposable test project and volumes were removed.

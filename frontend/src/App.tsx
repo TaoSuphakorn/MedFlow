@@ -357,6 +357,7 @@ export default function App() {
           {nav.map(({ name, icon: Icon }) => (
             <button
               key={name}
+              data-tour={name === 'Patients' ? 'patients' : undefined}
               className={
                 (view === name && !patient) || (patient && name === 'Patients')
                   ? 'nav-item active'
@@ -431,6 +432,7 @@ export default function App() {
           <div className="breadcrumb">
             <button
               className="mobile-menu"
+              data-tour="menu"
               ref={menuButtonRef}
               aria-label={t('Open navigation')}
               aria-expanded={mobile}
@@ -780,11 +782,14 @@ export default function App() {
           </Button>
         </div>
       </Dialog>
-      <OnboardingGuide key={user.userId} user={user} replay={guideReplay} restoreFocus={() => {
+      <OnboardingGuide key={user.userId} user={user} replay={guideReplay}
+        patientOpen={patient !== null} directory={view === 'Patients' && patient === null}
+        search={search} compact={compactNavigation} mobile={mobile} restoreFocus={() => {
+        setMobile(false);
         const target = guideReplay > 0
           ? compactNavigation ? menuButtonRef.current : helpButtonRef.current
           : mainRef.current;
-        target?.focus({ preventScroll: true });
+        requestAnimationFrame(() => target?.focus({ preventScroll: true }));
       }} />
     </div>
   );
@@ -872,6 +877,7 @@ function PatientTable({
         <div className="search-field">
           <Search size={17} />
           <input
+            data-tour="search"
             placeholder={t('Search name, Thai name, or patient ID…')}
             value={search}
             maxLength={100}
@@ -958,6 +964,7 @@ function PatientTable({
                   <td>
                     <button
                       className="open-patient"
+                      data-tour="open-patient"
                       aria-label={`${t('Open')} ${p.name.split(' ')[0]}`}
                       onClick={() => onOpen(p.id)}
                     >

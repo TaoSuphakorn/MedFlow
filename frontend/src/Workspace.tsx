@@ -235,7 +235,7 @@ export function Workspace({
           </Button>
         )}
       </div>
-      <div className="patient-context">
+      <div className="patient-context" data-tour="history">
         <div>
           <History size={17} />
           <span>
@@ -252,7 +252,7 @@ export function Workspace({
         </div>
       </div>
       <div className="workspace-tabs">
-        <button className={tab === 'notes' ? 'selected' : ''} onClick={() => setTab('notes')}>
+        <button data-tour="documentation-tab" className={tab === 'notes' ? 'selected' : ''} onClick={() => setTab('notes')}>
           <FileText size={17} />
           {t('Clinical documentation')}
         </button>
@@ -382,6 +382,7 @@ export function Workspace({
                         </div>
                       </div>
                       <textarea
+                        data-tour={s.key === 'subjective' ? 'soap-field' : undefined}
                         id={s.key}
                         placeholder={t(s.placeholder)}
                         rows={3}
