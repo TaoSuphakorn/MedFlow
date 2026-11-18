@@ -17,29 +17,29 @@ The interface supports Thai and English. Use **ไทย / EN** on the login scr
 Install and start Docker Engine / Docker Desktop with Docker Compose v2 and Linux containers. No Node.js, npm, .NET SDK, EF CLI or PostgreSQL installation is required.
 
 ```bash
-git clone <repository-url>
-cd medflow-ai
+git clone https://github.com/TaoSuphakorn/MedFlow.git
+cd MedFlow
 docker compose up --build -d
 ```
 
-Replace `<repository-url>` with this repository's GitHub URL when publishing. No `.env` copy, manual migration, seed command or API key is required. The first build downloads dependencies and images; allow several minutes depending on your connection. Use `docker compose ps` to check readiness.
+No `.env` copy, manual migration, seed command or API key is required. The first build downloads dependencies and images; allow several minutes depending on your connection. Use `docker compose ps` to check readiness.
 
-| Service | URL |
-|---|---|
-| Frontend | [http://localhost:3000](http://localhost:3000) |
-| API health | [http://localhost:8080/health](http://localhost:8080/health) |
-| Swagger | [http://localhost:8080/swagger](http://localhost:8080/swagger) |
-| PostgreSQL | Internal Docker network only; no published port |
+| Service    | URL                                                            |
+| ---------- | -------------------------------------------------------------- |
+| Frontend   | [http://localhost:3000](http://localhost:3000)                 |
+| API health | [http://localhost:8080/health](http://localhost:8080/health)   |
+| Swagger    | [http://localhost:8080/swagger](http://localhost:8080/swagger) |
+| PostgreSQL | Internal Docker network only; no published port                |
 
 Ports bind to `127.0.0.1` for local use. Stop with `docker compose down`; data persists in named volumes. **`docker compose down -v` permanently removes the demo database and saved records.**
 
 ## Demo accounts
 
-| Role | Email | Password | Permissions |
-|---|---|---|---|
-| Doctor | `doctor@medflow.demo` | `Demo!2026` | Read records, create/edit drafts, request AI, confirm SOAP |
-| Nurse | `nurse@medflow.demo` | `Demo!2026` | Read records, create/edit drafts, request AI |
-| Administrator | `admin@medflow.demo` | `Demo!2026` | Read records and audit events |
+| Role          | Email                 | Password    | Permissions                                                |
+| ------------- | --------------------- | ----------- | ---------------------------------------------------------- |
+| Doctor        | `doctor@medflow.demo` | `Demo!2026` | Read records, create/edit drafts, request AI, confirm SOAP |
+| Nurse         | `nurse@medflow.demo`  | `Demo!2026` | Read records, create/edit drafts, request AI               |
+| Administrator | `admin@medflow.demo`  | `Demo!2026` | Read records and audit events                              |
 
 Select a role on the login screen to prefill its email. Passwords are hashed with ASP.NET Identity's PBKDF2 password hasher. These publicly documented accounts exist only for the local demo.
 
@@ -67,17 +67,22 @@ See the [five-minute demo guide](docs/demo-guide.md) for a presentation walkthro
 - Real cookie authentication, CSRF protection, server-side authorization and metadata-only auditing.
 - Responsive desktop/tablet UI with self-hosted Latin and Thai fonts and accessible Radix dialog primitives.
 - Docker-only startup, dependency installation, migrations, seed and tests.
+- Today's clinic worklist for exam-room tablets: check-in, Waiting → In exam → Completed with versioned, audited status changes.
+- Sticky patient banner with a red allergy alert, and per-section AI provenance: every AI-suggested SOAP section must be edited or marked reviewed by a doctor, enforced by the API.
+- AI summaries cite their source visits sentence by sentence; unsupported sentences are flagged and citations are validated server-side.
+- Vital signs with warning/critical alerts (demonstration thresholds), trend charts with a table view, and audited entry.
+- Clean Clinical Blue theme. See the [redesign and roadmap](docs/roadmap.md) for details and next steps.
 
 ## Technology
 
-| Layer | Stack |
-|---|---|
-| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 4, shadcn/ui-style source components with Radix primitives |
-| State and forms | TanStack Query 5, React Hook Form 7, Zod 4 |
-| Backend | ASP.NET Core 10, EF Core 10, Npgsql, PostgreSQL 17 |
-| AI | Server-side OpenAI REST integration with strict JSON schema; deterministic demo provider |
-| Infrastructure | Multi-stage Dockerfiles, Docker Compose, Nginx reverse proxy, health checks and persistent volumes |
-| Tests | xUnit API integration tests against PostgreSQL; Playwright Chromium E2E |
+| Layer           | Stack                                                                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| Frontend        | React 19, TypeScript, Vite 7, Tailwind CSS 4, shadcn/ui-style source components with Radix primitives |
+| State and forms | TanStack Query 5, React Hook Form 7, Zod 4                                                            |
+| Backend         | ASP.NET Core 10, EF Core 10, Npgsql, PostgreSQL 17                                                    |
+| AI              | Server-side OpenAI REST integration with strict JSON schema; deterministic demo provider              |
+| Infrastructure  | Multi-stage Dockerfiles, Docker Compose, Nginx reverse proxy, health checks and persistent volumes    |
+| Tests           | xUnit API integration tests against PostgreSQL; Playwright Chromium E2E                               |
 
 Frontend dependencies are pinned by `package-lock.json`; Docker uses `npm ci`. Application dependencies are restored and built inside containers.
 
@@ -124,12 +129,12 @@ Summary suggestions remain unapproved assistance and cannot be confirmed as clin
 
 All defaults are supplied in Compose. `.env.example` documents optional overrides:
 
-| Variable | Default | Notes |
-|---|---|---|
-| `OPENAI_API_KEY` | Empty | Enables live AI when set; server only |
-| `OPENAI_MODEL` | `gpt-4o-mini` | Must support structured outputs and be available to your account |
-| `POSTGRES_PASSWORD` | `local-demo-db-only` | Local demo default, not a deployment secret |
-| `DEMO_PASSWORD` | `Demo!2026` | Applied only when seed users are first inserted |
+| Variable            | Default              | Notes                                                            |
+| ------------------- | -------------------- | ---------------------------------------------------------------- |
+| `OPENAI_API_KEY`    | Empty                | Enables live AI when set; server only                            |
+| `OPENAI_MODEL`      | `gpt-4o-mini`        | Must support structured outputs and be available to your account |
+| `POSTGRES_PASSWORD` | `local-demo-db-only` | Local demo default, not a deployment secret                      |
+| `DEMO_PASSWORD`     | `Demo!2026`          | Applied only when seed users are first inserted                  |
 
 Optional live configuration in an ignored `.env`:
 
