@@ -1,9 +1,7 @@
-# Calm Care theme
+# Clean Clinical Blue theme
 
-This visual refresh pairs a deep blue navigation rail with warm white content surfaces, sage panels and teal primary actions. Existing Inter and Noto Sans Thai fonts remain locally bundled. The larger patient names, labels and clinical text help distinguish navigation, record content and review actions.
+The visual layer was changed from the earlier green "Calm Care" theme to Clean Clinical Blue. The theme uses white cards on a cool gray canvas (`#f5f7fa`), a light navigation rail with a blue active indicator, and a medical-blue primary (`#1d5fd1`, 5.9:1 on white). Confirmed and positive states use a separate success green (`#1f7a4d`), so "confirmed" is never confused with "primary action". Allergy alerts stay red and AI suggestions stay purple, and both use text and icons as well as color. The sign-in story panel uses deep navy (`#0f2747`).
 
-The visual layer lives in `frontend/src/care-theme.css`, after the existing layout and responsive rules. It defines shared color tokens and component styling for login, navigation, overview, patient lists, SOAP editing and dialogs. The amber review state and explicit confirmation controls remain visible. Thai/English behavior and the mobile drawer interaction are unchanged.
+The theme lives in `frontend/src/care-theme.css`. The file name and token names (`--teal`, `--teal-dark`) are unchanged so earlier layers keep working; `--teal` now holds the primary blue. Dropdowns (`controls.css`), the onboarding spotlight (`onboarding.css`) and review states (`review.css`) were retinted to the same palette. Layout, responsive rules, fonts (Inter and Noto Sans Thai, bundled locally) and Thai/English behavior are unchanged.
 
-The UI/UX Pro Max healthcare query recommended an accessible clinical palette, visible focus and restrained motion. Its sales landing-page pattern did not fit this authenticated workspace, so it was not applied. No remote fonts, images or dependencies were added.
-
-Validation: Docker frontend build passed and the full browser regression suite passed 23/23 cases. The additional layout check covers a 375px login, portrait/landscape overview, reduced motion and an enlarged root font. Desktop login/overview and narrow SOAP screenshots were inspected. This is not a screen-reader or full accessibility audit. A drawer shadow visible while the menu was closed was removed after visual inspection and the responsive tests were rerun.
+Validation: Docker frontend build passed, and the full Playwright suite (46 tests) passed, including the 375px and enlarged-text layout checks. Desktop login, overview and the 768px worklist were inspected visually. This is not a full screen-reader or WCAG audit.

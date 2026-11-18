@@ -138,6 +138,51 @@ public class WorkflowTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains(audit.EnumerateArray(), a => a.GetProperty("action").GetString() == "ai.generated");
         Assert.Equal(HttpStatusCode.Forbidden, (await c.GetAsync("/api/audit")).StatusCode);
     }
+    [Fact] public async Task Ai_soap_draft_cannot_be_confirmed_until_every_section_is_reviewed()
+    {
+        using var c = Client(); await Login(c); var id = await Patient(c);
+        var n = await (await c.PostAsJsonAsync($"/api/patients/{id}/ai", new { kind = "soap" })).Content.ReadFromJsonAsync<JsonElement>();
+        var nid = n.GetProperty("id").GetInt32();
+        var reviews = n.GetProperty("sectionReviews");
+        Assert.Equal(new[] { "subjective", "objective", "assessment", "plan" }, reviews.EnumerateArray().Select(r => r.GetProperty("section").GetString()));
+        Assert.All(reviews.EnumerateArray(), r => Assert.Equal(JsonValueKind.Null, r.GetProperty("reviewedAt").ValueKind));
+        Assert.Equal(n.GetProperty("objective").GetString(), reviews[1].GetProperty("aiText").GetString());
+        Assert.Equal(HttpStatusCode.Conflict, (await c.PostAsJsonAsync($"/api/notes/{nid}/confirm", new { reviewed = true, version = 1 })).StatusCode);
+
+        // Editing a section clears it; the other three still need an explicit check.
+        var edit = new { subjective = "Clinician-rewritten synthetic history " + Guid.NewGuid(), objective = n.GetProperty("objective").GetString(), assessment = n.GetProperty("assessment").GetString(), plan = n.GetProperty("plan").GetString(), version = 1 };
+        Assert.Equal(HttpStatusCode.OK, (await c.PutAsJsonAsync($"/api/notes/{nid}", edit)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await c.PostAsJsonAsync($"/api/notes/{nid}/confirm", new { reviewed = true, version = 2 })).StatusCode);
+        foreach (var section in new[] { "objective", "assessment", "plan" })
+            Assert.Equal(HttpStatusCode.OK, (await c.PostAsync($"/api/notes/{nid}/sections/{section}/review", null)).StatusCode);
+        var cleared = await (await c.DeleteAsync($"/api/notes/{nid}/sections/plan/review")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Null, cleared.GetProperty("sectionReviews").EnumerateArray().Single(r => r.GetProperty("section").GetString() == "plan").GetProperty("reviewedAt").ValueKind);
+        Assert.Equal(HttpStatusCode.Conflict, (await c.PostAsJsonAsync($"/api/notes/{nid}/confirm", new { reviewed = true, version = 2 })).StatusCode);
+        var marked = await (await c.PostAsync($"/api/notes/{nid}/sections/plan/review", null)).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.All(marked.GetProperty("sectionReviews").EnumerateArray().Where(r => r.GetProperty("section").GetString() != "subjective"), r => Assert.NotEqual(JsonValueKind.Null, r.GetProperty("reviewedAt").ValueKind));
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsync($"/api/notes/{nid}/sections/diagnosis/review", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await c.PostAsJsonAsync($"/api/notes/{nid}/confirm", new { reviewed = true, version = 2 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await c.PostAsync($"/api/notes/{nid}/sections/plan/review", null)).StatusCode);
+
+        var patient = await c.GetFromJsonAsync<JsonElement>($"/api/patients/{id}");
+        var stored = patient.GetProperty("notes").EnumerateArray().Single(x => x.GetProperty("id").GetInt32() == nid);
+        Assert.Equal(4, stored.GetProperty("sectionReviews").GetArrayLength());
+        using var admin = Client(); await Login(admin, "admin");
+        var audit = await admin.GetFromJsonAsync<JsonElement>("/api/audit");
+        Assert.Contains(audit.EnumerateArray(), a => a.GetProperty("action").GetString() == "note.section.reviewed.objective" && a.GetProperty("noteId").GetInt32() == nid);
+        Assert.Contains(audit.EnumerateArray(), a => a.GetProperty("action").GetString() == "note.section.unreviewed.plan" && a.GetProperty("noteId").GetInt32() == nid);
+    }
+    [Fact] public async Task Section_review_is_doctor_only_and_requires_an_ai_suggestion()
+    {
+        using var doctor = Client(); await Login(doctor); var id = await Patient(doctor);
+        var ai = await (await doctor.PostAsJsonAsync($"/api/patients/{id}/ai", new { kind = "soap" })).Content.ReadFromJsonAsync<JsonElement>();
+        using var nurse = Client(); await Login(nurse, "nurse");
+        Assert.Equal(HttpStatusCode.Forbidden, (await nurse.PostAsync($"/api/notes/{ai.GetProperty("id").GetInt32()}/sections/plan/review", null)).StatusCode);
+        var manual = await (await doctor.PostAsJsonAsync($"/api/patients/{id}/notes", Note())).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, manual.GetProperty("sectionReviews").GetArrayLength());
+        Assert.Equal(HttpStatusCode.Conflict, (await doctor.PostAsync($"/api/notes/{manual.GetProperty("id").GetInt32()}/sections/plan/review", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await doctor.PostAsync("/api/notes/999999/sections/plan/review", null)).StatusCode);
+    }
     [Fact] public async Task Summary_suggestions_do_not_count_as_actionable_soap_drafts()
     {
         using var c = Client(); await Login(c); var id = await Patient(c);

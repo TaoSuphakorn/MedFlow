@@ -1,0 +1,169 @@
+/* Clinical safety layer: patient banner, allergy alert and per-section AI provenance. */
+:root {
+  --alert-bg: #fdeeed;
+  --alert-border: #e9b7b2;
+  --alert-ink: #8a1f1a;
+  --ai-bg: #f1edfa;
+  --ai-ink: #553a8c;
+  --ai-border: #cdbfe8;
+  --reviewed-ink: var(--success);
+}
+
+/* AI badge text darkened to reach 4.5:1 contrast on its tint. */
+.badge-purple { background: var(--ai-bg); color: var(--ai-ink); }
+
+
+.patient-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, auto) auto;
+  align-items: center;
+  gap: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px 14px;
+  margin-bottom: 25px;
+  box-shadow: var(--card-shadow);
+}
+.patient-banner .profile-title h1 { font-size: 26px; line-height: 1.25; }
+
+.banner-history {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.banner-history > svg { flex: none; align-self: center; color: var(--teal); }
+.banner-history strong { flex: none; color: var(--ink); font-weight: 600; }
+.allergy-flag {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 360px;
+}
+.allergy-flag > span { display: flex; flex-direction: column; min-width: 0; }
+.allergy-flag strong { font-size: 12px; letter-spacing: 0.2px; }
+.allergy-flag > svg { flex: none; margin-top: 2px; }
+.allergy-flag.is-alert {
+  background: var(--alert-bg);
+  border-color: var(--alert-border);
+  border-left: 4px solid #c2372d;
+  color: var(--alert-ink);
+}
+.allergy-flag.is-alert strong { text-transform: uppercase; }
+.allergy-flag.is-clear { background: var(--success-soft); color: var(--success); border-color: #cbe6d6; }
+
+/* Keep identity and allergy in view while scrolling long notes on workstations. */
+@media (min-width: 1024px) {
+  /* The canvas-coloured spread hides content scrolling through the gap below the top bar. */
+  .patient-banner {
+    position: sticky;
+    top: 84px;
+    z-index: 15;
+    box-shadow: 0 -10px 0 2px var(--canvas), var(--card-shadow);
+  }
+}
+
+@media (max-width: 1023px) {
+  .patient-banner { grid-template-columns: minmax(0, 1fr) auto; }
+  .allergy-flag { grid-column: 1 / -1; grid-row: 2; max-width: none; }
+}
+@media (max-width: 640px) {
+  .patient-banner { grid-template-columns: 1fr; padding: 14px; }
+  .allergy-flag { grid-column: auto; grid-row: auto; }
+  .patient-banner > .btn { width: 100%; }
+  .banner-history { flex-wrap: wrap; }
+}
+
+/* Per-section AI review */
+.review-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 25px;
+  font-size: 13px;
+  color: var(--ai-ink);
+  background: #f8f6fd;
+  border-bottom: 1px solid #e7e1f4;
+}
+.review-meter {
+  flex: 1;
+  max-width: 180px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: 99px;
+  background: #e4dcf3;
+  overflow: hidden;
+}
+.review-meter > span {
+  display: block;
+  height: 100%;
+  background: #6c4fb0;
+  border-radius: inherit;
+  transition: width 220ms ease-out;
+}
+
+.soap-section { position: relative; }
+.soap-section.ai-pending::before,
+.soap-section.ai-reviewed::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 23px;
+  bottom: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+}
+.soap-section.ai-pending::before { background: #8d74c9; }
+.soap-section.ai-reviewed::before { background: var(--success); }
+.soap-section.ai-pending textarea { border-style: dashed; border-color: var(--ai-border); background: #fcfbff; }
+
+.provenance {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.review-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid #cdd7e4;
+  background: var(--surface);
+  color: #24466f;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.review-toggle:hover:not(:disabled) { background: #f1f5fb; border-color: #9fb4d1; }
+.review-toggle.on { background: var(--success-soft); border-color: #8cc7a6; color: var(--success); }
+.review-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.review-toggle:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .soap-label { flex-wrap: wrap; }
+  .provenance { width: 100%; justify-content: flex-start; margin-left: 46px; }
+  .review-progress { flex-wrap: wrap; padding: 12px 16px; }
+  .review-meter { max-width: none; flex-basis: 100%; margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-meter > span, .review-toggle { transition: none; }
+}

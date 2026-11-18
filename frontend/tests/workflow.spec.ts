@@ -42,9 +42,19 @@ test('doctor reviews AI, edits draft, explicitly confirms and reopens saved note
   await page.getByLabel('Subjective', { exact: true }).fill(reviewedText);
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Draft saved');
-  await page
-    .getByLabel('I have reviewed and edited this note and take responsibility for its content.')
-    .check();
+  const attestation = page.getByLabel(
+    'I have reviewed and edited this note and take responsibility for its content.',
+  );
+  await expect(page.getByText('Edited by clinician', { exact: true })).toBeVisible();
+  await expect(attestation).toBeDisabled();
+  for (const section of ['Objective', 'Assessment', 'Plan']) {
+    await page.getByRole('button', { name: `Mark ${section} as reviewed` }).click();
+  }
+  await expect(page.getByRole('progressbar', { name: 'AI section review progress' })).toHaveAttribute(
+    'aria-valuenow',
+    '4',
+  );
+  await attestation.check();
   await page.getByRole('button', { name: 'Confirm clinical note' }).click();
   await expect(page.getByRole('status')).toContainText('Clinical note confirmed');
   await page.reload();

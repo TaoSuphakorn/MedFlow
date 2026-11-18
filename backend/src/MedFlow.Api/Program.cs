@@ -152,7 +152,10 @@ api.MapGet("/patients", async (string? search, ClinicalDb db) =>
 });
 api.MapGet("/patients/{id:int}", async (int id, ClinicalDb db, HttpContext ctx) =>
 {
-    var p = await db.Patients.AsNoTracking().Include(p => p.Notes.OrderByDescending(n => n.CreatedAt)).SingleOrDefaultAsync(p => p.Id == id);
+    var p = await db.Patients.AsNoTracking()
+        .Include(p => p.Notes.OrderByDescending(n => n.CreatedAt)).ThenInclude(n => n.SectionReviews.OrderBy(r => r.Id))
+        .Include(p => p.Notes.OrderByDescending(n => n.CreatedAt)).ThenInclude(n => n.SummarySentences.OrderBy(s => s.Ordinal))
+        .AsSplitQuery().SingleOrDefaultAsync(p => p.Id == id);
     if (p is null)
         return Results.NotFound();
     await Audit(db, ctx, "patient.accessed", id);
@@ -177,7 +180,7 @@ api.MapPut("/notes/{id:int}", async (int id, SoapInput input, ClinicalDb db, Htt
 {
     if (!input.IsValid())
         return InvalidSoap();
-    var note = await db.Notes.FindAsync(id);
+    var note = await db.Notes.Include(n => n.SectionReviews.OrderBy(r => r.Id)).SingleOrDefaultAsync(n => n.Id == id);
     if (note is null)
         return Results.NotFound();
     if (note.Kind != "soap")
@@ -199,7 +202,7 @@ api.MapPost("/notes/{id:int}/confirm", async (int id, ConfirmInput input, Clinic
         {
             error = "Explicit clinician review is required."
         });
-    var note = await db.Notes.FindAsync(id);
+    var note = await db.Notes.Include(n => n.SectionReviews.OrderBy(r => r.Id)).SingleOrDefaultAsync(n => n.Id == id);
     if (note is null)
         return Results.NotFound();
     if (note.Kind != "soap" || note.Status != "Draft" || note.Version != input.Version)
@@ -209,6 +212,11 @@ api.MapPost("/notes/{id:int}/confirm", async (int id, ConfirmInput input, Clinic
         });
     if (!new SoapInput(note.Subjective, note.Objective, note.Assessment, note.Plan, note.Version).IsValid())
         return InvalidSoap();
+    if (note.SectionReviews.Any(r => r.IsPending(note)))
+        return Results.Conflict(new
+        {
+            error = "Review every AI-suggested section before confirming."
+        });
     note.Status = "Confirmed";
     note.ConfirmedBy = int.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     note.ConfirmedAt = DateTime.UtcNow;
@@ -217,6 +225,11 @@ api.MapPost("/notes/{id:int}/confirm", async (int id, ConfirmInput input, Clinic
     await Audit(db, ctx, "note.confirmed", note.PatientId, id);
     return Results.Ok(note);
 }).RequireAuthorization(p => p.RequireRole("Doctor"));
+// Doctors mark an unchanged AI section as checked; edited sections count as reviewed automatically.
+api.MapPost("/notes/{id:int}/sections/{section}/review", (int id, string section, ClinicalDb db, HttpContext ctx) => SetSectionReview(id, section, true, db, ctx))
+    .RequireAuthorization(p => p.RequireRole("Doctor"));
+api.MapDelete("/notes/{id:int}/sections/{section}/review", (int id, string section, ClinicalDb db, HttpContext ctx) => SetSectionReview(id, section, false, db, ctx))
+    .RequireAuthorization(p => p.RequireRole("Doctor"));
 api.MapPost("/patients/{id:int}/ai", async (int id, AiInput input, ClinicalDb db, AiService ai, HttpContext ctx, CancellationToken ct) =>
 {
     if (input.Kind is not ("soap" or "summary"))
@@ -232,6 +245,9 @@ api.MapPost("/patients/{id:int}/ai", async (int id, AiInput input, ClinicalDb db
     {
         var payload = await ai.GenerateAsync(p, input.Kind, ct);
         var note = new ClinicalNote { PatientId = id, Subjective = payload.Subjective, Objective = payload.Objective, Assessment = payload.Assessment, Plan = payload.Plan, Summary = payload.Summary, MissingInformation = payload.MissingInformation, Uncertainty = payload.Uncertainty, AiGenerated = true, AiMode = ai.IsDemo ? "Demo" : "Live", Kind = input.Kind };
+        if (input.Kind == "soap")
+            note.SectionReviews = NoteSectionReview.Baseline(note);
+        note.SummarySentences = AiService.Cite(payload, AiService.ContextRecords(p));
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Notes.Add(note);
         await db.SaveChangesAsync(ct);
@@ -241,8 +257,92 @@ api.MapPost("/patients/{id:int}/ai", async (int id, AiInput input, ClinicalDb db
     }
     catch (AiUnavailableException) { await Audit(db, ctx, "ai.failed", id); return Results.Json(new { error = "AI assistance is unavailable or returned invalid content. No suggestion was saved. Try again later." }, statusCode: 502); }
 }).RequireAuthorization(p => p.RequireRole("Doctor", "Nurse")).RequireRateLimiting("ai");
+api.MapGet("/patients/{id:int}/vitals", async (int id, ClinicalDb db) =>
+{
+    if (!await db.Patients.AnyAsync(p => p.Id == id))
+        return Results.NotFound();
+    var rows = await db.VitalSigns.AsNoTracking().Where(v => v.PatientId == id).OrderByDescending(v => v.RecordedAt).ThenByDescending(v => v.Id).Take(20).ToListAsync();
+    return Results.Ok(rows.Select(VitalRules.ToReading));
+});
+api.MapPost("/patients/{id:int}/vitals", async (int id, VitalInput input, ClinicalDb db, HttpContext ctx) =>
+{
+    if (!VitalRules.IsPlausible(input))
+        return Results.BadRequest(new { error = "Check the values. One or more vital signs are missing or outside the possible range." });
+    if (!await db.Patients.AnyAsync(p => p.Id == id))
+        return Results.NotFound();
+    await using var tx = await db.Database.BeginTransactionAsync();
+    var row = new VitalSign { PatientId = id, RecordedBy = int.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!), Systolic = input.Systolic!.Value, Diastolic = input.Diastolic!.Value, Pulse = input.Pulse!.Value, TemperatureC = Math.Round(input.TemperatureC!.Value, 1), RespiratoryRate = input.RespiratoryRate!.Value, SpO2 = input.SpO2!.Value };
+    db.VitalSigns.Add(row);
+    await db.SaveChangesAsync();
+    await Audit(db, ctx, "vitals.recorded", id);
+    await tx.CommitAsync();
+    return Results.Created($"/api/patients/{id}/vitals", VitalRules.ToReading(row));
+}).RequireAuthorization(p => p.RequireRole("Doctor", "Nurse"));
+api.MapGet("/worklist", async (ClinicalDb db) =>
+{
+    var (start, end) = ClinicDay.Range(DateTime.UtcNow);
+    return Results.Ok(await Worklist(db, e => e.ScheduledAt >= start && e.ScheduledAt < end).ToListAsync());
+});
+api.MapPost("/encounters", async (CheckInInput input, ClinicalDb db, HttpContext ctx) =>
+{
+    var reason = input.Reason?.Trim();
+    if (string.IsNullOrEmpty(reason) || reason.Length > 200)
+        return Results.BadRequest(new { error = "Enter a visit reason of 200 characters or fewer." });
+    if (!await db.Patients.AnyAsync(p => p.Id == input.PatientId))
+        return Results.NotFound();
+    var (start, end) = ClinicDay.Range(DateTime.UtcNow);
+    if (await db.Encounters.AnyAsync(e => e.PatientId == input.PatientId && e.ScheduledAt >= start && e.ScheduledAt < end && e.Status != "Completed"))
+        return Results.Conflict(new { error = "This patient is already in today's queue." });
+    await using var tx = await db.Database.BeginTransactionAsync();
+    var encounter = new Encounter { PatientId = input.PatientId, ScheduledAt = DateTime.UtcNow, Reason = reason, Room = "Triage" };
+    db.Encounters.Add(encounter);
+    await db.SaveChangesAsync();
+    await Audit(db, ctx, "encounter.checked_in", input.PatientId);
+    await tx.CommitAsync();
+    return Results.Created("/api/worklist", await Worklist(db, e => e.Id == encounter.Id).SingleAsync());
+}).RequireAuthorization(p => p.RequireRole("Doctor", "Nurse"));
+api.MapPost("/encounters/{id:int}/status", async (int id, EncounterStatusInput input, ClinicalDb db, HttpContext ctx) =>
+{
+    if (input.Status is null || !Encounter.Statuses.Contains(input.Status))
+        return Results.BadRequest(new { error = "Choose Waiting, InExam or Completed." });
+    var encounter = await db.Encounters.FindAsync(id);
+    if (encounter is null)
+        return Results.NotFound();
+    if (encounter.Version != input.Version)
+        return Results.Conflict(new { error = "This visit changed. Refresh the worklist." });
+    if (!Encounter.CanMove(encounter.Status, input.Status))
+        return Results.Conflict(new { error = "This status change is not allowed." });
+    encounter.Status = input.Status;
+    encounter.UpdatedAt = DateTime.UtcNow;
+    encounter.Version++;
+    await Audit(db, ctx, $"encounter.{input.Status.ToLowerInvariant()}", encounter.PatientId);
+    return Results.Ok(await Worklist(db, e => e.Id == id).SingleAsync());
+}).RequireAuthorization(p => p.RequireRole("Doctor", "Nurse"));
 api.MapGet("/audit", async (ClinicalDb db) => Results.Ok(await db.AuditEvents.AsNoTracking().OrderByDescending(a => a.Id).Take(200).ToListAsync())).RequireAuthorization(p => p.RequireRole("Administrator"));
 app.Run();
+static async Task<IResult> SetSectionReview(int id, string section, bool reviewed, ClinicalDb db, HttpContext ctx)
+{
+    if (!NoteSectionReview.Sections.Contains(section))
+        return Results.BadRequest(new { error = "Choose subjective, objective, assessment or plan." });
+    var note = await db.Notes.Include(n => n.SectionReviews.OrderBy(r => r.Id)).SingleOrDefaultAsync(n => n.Id == id);
+    if (note is null)
+        return Results.NotFound();
+    if (note.Kind != "soap" || note.Status != "Draft")
+        return Results.Conflict(new { error = "Only SOAP drafts can be reviewed." });
+    var row = note.SectionReviews.SingleOrDefault(r => r.Section == section);
+    if (row is null)
+        return Results.Conflict(new { error = "This section has no AI suggestion to review." });
+    row.ReviewedBy = reviewed ? int.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!) : null;
+    row.ReviewedAt = reviewed ? DateTime.UtcNow : null;
+    await Audit(db, ctx, reviewed ? $"note.section.reviewed.{section}" : $"note.section.unreviewed.{section}", note.PatientId, id);
+    return Results.Ok(note);
+}
+// Filter and sort on the entity before projecting; EF cannot translate members of a constructed record.
+static IQueryable<WorklistItem> Worklist(ClinicalDb db, System.Linq.Expressions.Expression<Func<Encounter, bool>> filter) =>
+    from e in db.Encounters.AsNoTracking().Where(filter)
+    join p in db.Patients on e.PatientId equals p.Id
+    orderby e.ScheduledAt, e.Id
+    select new WorklistItem(e.Id, p.Id, p.Identifier, p.Name, p.ThaiName, p.Age, p.Gender, p.Allergies, e.ScheduledAt, e.Reason, e.Room, e.Status, e.Version, db.Notes.Count(n => n.PatientId == p.Id && n.Status == "Draft" && n.Kind == "soap"));
 static IResult InvalidSoap() => Results.BadRequest(new { error = "All four SOAP sections are required and must be 8,000 characters or fewer." });
 static void Apply(ClinicalNote n, SoapInput i) { n.Subjective = i.Subjective!.Trim(); n.Objective = i.Objective!.Trim(); n.Assessment = i.Assessment!.Trim(); n.Plan = i.Plan!.Trim(); n.UpdatedAt = DateTime.UtcNow; }
 static async Task Audit(ClinicalDb db, HttpContext ctx, string action, int? patientId = null, int? noteId = null, int? userId = null)

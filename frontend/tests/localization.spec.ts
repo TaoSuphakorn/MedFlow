@@ -16,6 +16,9 @@ test('Thai doctor workflow confirms an AI draft and administrator can inspect it
   await page.getByLabel('อาการและประวัติ (Subjective)', { exact: true }).fill(reviewedText);
   await page.getByRole('button', { name: 'บันทึกฉบับร่าง', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('บันทึกฉบับร่างแล้ว');
+  for (const section of ['ผลตรวจ (Objective)', 'การประเมิน (Assessment)', 'แผนการรักษา (Plan)']) {
+    await page.getByRole('button', { name: `ทำเครื่องหมายว่าตรวจทาน ${section} แล้ว` }).click();
+  }
   await page
     .getByLabel('ฉันได้ตรวจทานและแก้ไขบันทึกนี้แล้ว และรับผิดชอบต่อเนื้อหาที่บันทึก')
     .check();

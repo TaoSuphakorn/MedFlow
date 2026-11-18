@@ -17,7 +17,6 @@ import {
   ClipboardCheck,
   FileClock,
   FileText,
-  HeartPulse,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -33,6 +32,7 @@ import { Avatar, Badge, Empty, ErrorState, Loading, Logo } from './components/sh
 import { Button } from './components/ui/button';
 import { Dialog } from './components/ui/dialog';
 import { Workspace } from './Workspace';
+import { Worklist } from './components/worklist';
 import { OnboardingGuide } from './components/onboarding-guide';
 import { Select, SelectBoundary } from './components/ui/select';
 import { Pagination, usePagination, type PaginationControl } from './components/ui/pagination';
@@ -549,47 +549,7 @@ export default function App() {
                   </div>
                   <div className="overview-columns">
                     <div className="overview-primary">
-                      <div className="welcome-banner">
-                        <div>
-                          <span className="banner-eyebrow">
-                            <span className="dot" /> {' ' + t('PATIENT DOCUMENTATION')}
-                          </span>
-                          <h2>
-                            {t('Patient records,')}
-                            <br />
-                            {t('ready for review.')}
-                          </h2>
-                          <p>
-                            {t('Review previous visits and write a SOAP note.')}
-                            <br />
-                            {t('AI drafts are available when you need them.')}
-                          </p>
-                          <Button variant="secondary" onClick={() => navigate('Patients')}>
-                            {t('Open patient workspace')}
-                            <ArrowRight size={16} />
-                          </Button>
-                        </div>
-                        <div className="banner-art" aria-hidden="true">
-                          <div className="art-orbit" />
-                          <span className="art-heart">
-                            <HeartPulse size={48} strokeWidth={1.5} />
-                          </span>
-                          <span className="art-spark">
-                            <Sparkles size={19} />
-                          </span>
-                          <span className="art-check">
-                            <Check size={18} />
-                          </span>
-                          <svg viewBox="0 0 220 70">
-                            <path
-                              d="M0 35 H55 L70 21 L84 49 L102 5 L120 63 L137 30 L153 35 H220"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                            />
-                          </svg>
-                        </div>
-                      </div>
+                      <Worklist user={user} patients={list} onOpen={open} notify={setToast} />
                       <PatientTable
                         patients={list.slice(0, 5)}
                         search={search}

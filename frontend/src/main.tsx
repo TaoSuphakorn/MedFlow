@@ -10,6 +10,9 @@ import './clinical-theme.css';
 import './care-theme.css';
 import './onboarding.css';
 import './controls.css';
+import './review.css';
+import './worklist.css';
+import './vitals.css';
 const client = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: false } },
 });

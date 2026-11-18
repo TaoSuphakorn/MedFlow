@@ -1,5 +1,5 @@
 import { useLanguage } from './lib/i18n';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,16 +10,22 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  CircleCheck,
   Clock3,
   FileCheck2,
   FileText,
   History,
+  HeartPulse,
+  Link2,
   Info,
+  ListChecks,
   LoaderCircle,
+  PenLine,
   Plus,
   Save,
   ShieldCheck,
   Sparkles,
+  TriangleAlert,
   WandSparkles,
 } from 'lucide-react';
 import { api, date, type Note, type Patient, type Soap, type User } from './lib/api';
@@ -27,6 +33,7 @@ import { Avatar, Badge, Empty, ErrorState, Loading } from './components/shared';
 import { Button } from './components/ui/button';
 import { Dialog } from './components/ui/dialog';
 import { Select } from './components/ui/select';
+import { VitalsPanel } from './components/vitals';
 
 const section = z
   .string()
@@ -40,6 +47,14 @@ const schema = z.object({
   plan: section,
 });
 const blank: Soap = { subjective: '', objective: '', assessment: '', plan: '' };
+type SectionKey = keyof Soap;
+// The stored AI text is the baseline, so edits stay visible after a draft is saved and reopened.
+const soapOf = (n: Note | null): Soap => {
+  if (!n) return blank;
+  const base: Soap = { subjective: n.subjective, objective: n.objective, assessment: n.assessment, plan: n.plan };
+  for (const r of n.sectionReviews ?? []) base[r.section] = r.aiText;
+  return base;
+};
 const sections = [
   {
     key: 'subjective' as const,
@@ -92,8 +107,12 @@ export function Workspace({
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [reviewed, setReviewed] = useState(false);
-  const [tab, setTab] = useState<'notes' | 'history'>('notes');
+  const [tab, setTab] = useState<'notes' | 'history' | 'vitals'>('notes');
+  // Confirmed visit a summary citation points at; the history tab opens and highlights it.
+  const [highlight, setHighlight] = useState<number | null>(null);
   const [discard, setDiscard] = useState<(() => void) | null>(null);
+  // Original AI text per section; used to show per-section AI provenance.
+  const [baseline, setBaseline] = useState<Soap>(blank);
   const form = useForm<Soap>({ resolver: zodResolver(schema), defaultValues: blank });
   const canEdit = user.role !== 'Administrator';
   const changed = form.formState.isDirty;
@@ -118,9 +137,11 @@ export function Workspace({
   function edit(note: Note | null) {
     setCurrent(note);
     form.reset(note || blank);
+    setBaseline(soapOf(note));
     setReviewed(false);
     setError('');
     setTab('notes');
+    setHighlight(null);
     if (note?.aiGenerated) setSuggestion(note);
   }
   async function refresh() {
@@ -167,7 +188,7 @@ export function Workspace({
     }
   }
   async function confirm() {
-    if (!current || !reviewed || changed) return;
+    if (!current || !reviewed || changed || !sectionsDone) return;
     setBusy('confirm');
     setError('');
     try {
@@ -202,56 +223,81 @@ export function Workspace({
   const confirmed = notes.filter((n) => n.status === 'Confirmed');
   const readOnly = current?.status === 'Confirmed' || !canEdit;
   const ai = suggestion || p.notes.find((n) => n.aiGenerated);
+  const hasAllergy = !/^no\b/i.test(p.allergies.trim());
+  const values = form.watch();
+  const reviews = current?.sectionReviews ?? [];
+  const aiReview = !!current?.aiGenerated && reviews.length > 0 && !readOnly;
+  const isChecked = (k: SectionKey) => !!reviews.find((r) => r.section === k)?.reviewedAt;
+  const isEdited = (k: SectionKey) => (values[k] ?? '').trim() !== baseline[k].trim();
+  const isReviewed = (k: SectionKey) => isEdited(k) || isChecked(k);
+  const reviewedCount = sections.filter((s) => isReviewed(s.key)).length;
+  const sectionsDone = !aiReview || reviewedCount === sections.length;
+  async function toggleChecked(k: SectionKey) {
+    if (!current) return;
+    setBusy('review');
+    setError('');
+    setReviewed(false);
+    try {
+      const n = await api<Note>(`/notes/${current.id}/sections/${k}/review`, isChecked(k) ? 'DELETE' : 'POST');
+      // Keep in-progress edits; only the review marks changed on the server.
+      setCurrent((prev) => (prev ? { ...prev, sectionReviews: n.sectionReviews } : prev));
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy('');
+    }
+  }
   return (
     <>
       <button className="back-link" onClick={() => guard(onBack)}>
         <ArrowLeft size={16} />
         {t('Back to patients')}
       </button>
-      <div className="patient-workspace-heading">
-        <div className="profile-title">
-          <Avatar name={p.name} color={p.color} large />
-          <div>
-            <div className="profile-kicker">
-              <span>{p.identifier}</span>
-              <Badge tone="teal">{t('SYNTHETIC PATIENT')}</Badge>
+      <header
+        className="patient-workspace-heading patient-banner"
+        aria-label={t('Patient banner')}
+        data-tour="history"
+      >
+          <div className="profile-title">
+            <Avatar name={p.name} color={p.color} large />
+            <div>
+              <div className="profile-kicker">
+                <span>{p.identifier}</span>
+                <Badge tone="teal">{t('SYNTHETIC PATIENT')}</Badge>
+              </div>
+              <h1>{p.name}</h1>
+              <p lang="th">
+                {p.thaiName}
+                <span>·</span>
+                {p.age} {' ' + t('years')}
+                <span>·</span>
+                {t(p.gender)}
+                <span>·</span>
+                {t('Blood type') + ' '}
+                {p.bloodType}
+              </p>
             </div>
-            <h1>{p.name}</h1>
-            <p lang="th">
-              {p.thaiName}
-              <span>·</span>
-              {p.age} {' ' + t('years')}
-              <span>·</span>
-              {t(p.gender)}
-              <span>·</span>
-              {t('Blood type') + ' '}
-              {p.bloodType}
-            </p>
           </div>
-        </div>
-        {canEdit && (
-          <Button variant="outline" onClick={() => guard(() => edit(null))}>
-            <Plus size={17} />
-            {t('New SOAP note')}
-          </Button>
-        )}
-      </div>
-      <div className="patient-context" data-tour="history">
-        <div>
-          <History size={17} />
-          <span>
+          <div className={`allergy-flag ${hasAllergy ? 'is-alert' : 'is-clear'}`}>
+            {hasAllergy ? <TriangleAlert size={18} aria-hidden /> : <ShieldCheck size={18} aria-hidden />}
+            <span>
+              <strong>{hasAllergy ? t('Allergy alert') : t('Allergies')}</strong>
+              <span>{p.allergies}</span>
+            </span>
+          </div>
+          {canEdit && (
+            <Button variant="outline" onClick={() => guard(() => edit(null))}>
+              <Plus size={17} />
+              {t('New SOAP note')}
+            </Button>
+          )}
+          <div className="banner-history">
+            <History size={15} aria-hidden />
             <strong>{t('Medical history')}</strong>
-            <p>{p.history}</p>
-          </span>
-        </div>
-        <div className={p.allergies.startsWith('No ') ? '' : 'allergy'}>
-          <AlertCircle size={17} />
-          <span>
-            <strong>{t('Allergies')}</strong>
-            <p>{p.allergies}</p>
-          </span>
-        </div>
-      </div>
+            <span>{p.history}</span>
+          </div>
+        </header>
       <div className="workspace-tabs">
         <button data-tour="documentation-tab" className={tab === 'notes' ? 'selected' : ''} onClick={() => setTab('notes')}>
           <FileText size={17} />
@@ -261,6 +307,10 @@ export function Workspace({
           <History size={17} />
           {t('Visit history')}
           <span className="number-badge">{confirmed.length}</span>
+        </button>
+        <button className={tab === 'vitals' ? 'selected' : ''} onClick={() => setTab('vitals')}>
+          <HeartPulse size={17} />
+          {t('Vital signs')}
         </button>
         <span>
           <ShieldCheck size={14} />
@@ -275,7 +325,9 @@ export function Workspace({
       )}
       <div className="workspace-columns">
         <div className="workspace-primary">
-          {tab === 'history' ? (
+          {tab === 'vitals' ? (
+            <VitalsPanel patientId={id} canRecord={canEdit} notify={notify} />
+          ) : tab === 'history' ? (
             <section className="card history-card">
               <div className="section-heading">
                 <h2>{t('Original clinical records')}</h2>
@@ -285,7 +337,9 @@ export function Workspace({
                 {t('Source documentation, separate from unapproved AI suggestions.')}
               </p>
               {confirmed.length ? (
-                confirmed.map((n, i) => <Record key={n.id} note={n} defaultOpen={i === 0} />)
+                confirmed.map((n, i) => (
+                  <Record key={n.id} note={n} defaultOpen={i === 0} highlighted={highlight === n.id} />
+                ))
               ) : (
                 <Empty
                   title={t('No confirmed records yet')}
@@ -366,15 +420,71 @@ export function Workspace({
                     </span>
                   </div>
                 )}
+                {aiReview && (
+                  <div className="review-progress">
+                    <ListChecks size={16} aria-hidden />
+                    <span>
+                      {t('AI sections reviewed: {done} of {total}', {
+                        done: reviewedCount,
+                        total: sections.length,
+                      })}
+                    </span>
+                    <span
+                      className="review-meter"
+                      role="progressbar"
+                      aria-label={t('AI section review progress')}
+                      aria-valuemin={0}
+                      aria-valuemax={sections.length}
+                      aria-valuenow={reviewedCount}
+                    >
+                      <span style={{ width: `${(reviewedCount / sections.length) * 100}%` }} />
+                    </span>
+                  </div>
+                )}
                 <form onSubmit={form.handleSubmit(save)}>
                   {sections.map((s) => (
-                    <div className="soap-section" key={s.key}>
+                    <div
+                      className={`soap-section${aiReview ? (isReviewed(s.key) ? ' ai-reviewed' : ' ai-pending') : ''}`}
+                      key={s.key}
+                    >
                       <div className="soap-label">
                         <span className={`soap-letter letter-${s.letter}`}>{s.letter}</span>
                         <div>
                           <label htmlFor={s.key}>{t(s.label)}</label>
                           <small>{t(s.help)}</small>
                         </div>
+                        {aiReview && (
+                          <div className="provenance">
+                            {isEdited(s.key) ? (
+                              <Badge tone="teal">
+                                <PenLine size={12} aria-hidden />
+                                {t('Edited by clinician')}
+                              </Badge>
+                            ) : (
+                              <>
+                                <Badge tone="purple">
+                                  <Sparkles size={12} aria-hidden />
+                                  {t('AI Suggested')}
+                                </Badge>
+                                {user.role === 'Doctor' && (
+                                  <button
+                                    type="button"
+                                    className={`review-toggle${isChecked(s.key) ? ' on' : ''}`}
+                                    aria-pressed={isChecked(s.key)}
+                                    aria-label={t('Mark {section} as reviewed', { section: t(s.label) })}
+                                    disabled={!!busy}
+                                    onClick={() => {
+                                      void toggleChecked(s.key);
+                                    }}
+                                  >
+                                    <CircleCheck size={15} aria-hidden />
+                                    {isChecked(s.key) ? t('Reviewed') : t('Mark reviewed')}
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <textarea
                         data-tour={s.key === 'subjective' ? 'soap-field' : undefined}
@@ -433,7 +543,7 @@ export function Workspace({
                             <input
                               type="checkbox"
                               checked={reviewed}
-                              disabled={!current || changed || !!busy}
+                              disabled={!current || changed || !sectionsDone || !!busy}
                               onChange={(e) => setReviewed(e.target.checked)}
                             />
                             <span>
@@ -444,7 +554,7 @@ export function Workspace({
                           </label>
                           <Button
                             type="button"
-                            disabled={!current || !reviewed || changed || !!busy}
+                            disabled={!current || !reviewed || changed || !sectionsDone || !!busy}
                             onClick={confirm}
                           >
                             <FileCheck2 size={17} />
@@ -453,6 +563,11 @@ export function Workspace({
                           {(!current || changed) && (
                             <small className="muted">
                               {t('Save your draft before confirming.')}
+                            </small>
+                          )}
+                          {current && !changed && !sectionsDone && (
+                            <small className="muted">
+                              {t('Review every AI-suggested section before confirming.')}
                             </small>
                           )}
                         </div>
@@ -557,7 +672,45 @@ export function Workspace({
                   <span>{ai.aiMode === 'Demo' ? t('Demo AI Mode') : t('Live AI Mode')}</span>
                 </div>
                 <h3>{t('Patient summary')}</h3>
-                <p>{ai.summary}</p>
+                {ai.summarySentences?.length ? (
+                  <ol className="cited-summary">
+                    {ai.summarySentences.map((sentence) => (
+                      <li key={sentence.ordinal} className={sentence.sourceNoteIds.length ? '' : 'uncited'}>
+                        <p>{sentence.text}</p>
+                        {sentence.sourceNoteIds.length ? (
+                          <span className="citations">
+                            {sentence.sourceNoteIds.map((sourceId) => {
+                              const source = p.notes.find((n) => n.id === sourceId);
+                              const label = source ? date(source.createdAt, locale) : `#${sourceId}`;
+                              return (
+                                <button
+                                  key={sourceId}
+                                  type="button"
+                                  className="citation"
+                                  aria-label={t('Show source visit {date}', { date: label })}
+                                  onClick={() => {
+                                    setHighlight(sourceId);
+                                    setTab('history');
+                                  }}
+                                >
+                                  <Link2 size={12} aria-hidden />
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </span>
+                        ) : (
+                          <span className="uncited-flag">
+                            <AlertCircle size={13} aria-hidden />
+                            {t('No source visit. Verify against the patient profile.')}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p>{ai.summary}</p>
+                )}
                 <div className="information-gap">
                   <span>
                     <AlertCircle size={15} />
@@ -640,12 +793,27 @@ export function Workspace({
   );
 }
 
-function Record({ note, defaultOpen = false }: { note: Note; defaultOpen?: boolean }) {
+function Record({
+  note,
+  defaultOpen = false,
+  highlighted = false,
+}: {
+  note: Note;
+  defaultOpen?: boolean;
+  highlighted?: boolean;
+}) {
   const { t, locale } = useLanguage();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(defaultOpen || highlighted);
+  const heading = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!highlighted) return;
+    setOpen(true);
+    heading.current?.scrollIntoView({ block: 'center' });
+    heading.current?.focus({ preventScroll: true });
+  }, [highlighted]);
   return (
-    <article className="record">
-      <button className="record-heading" aria-expanded={open} onClick={() => setOpen(!open)}>
+    <article className={`record${highlighted ? ' highlighted' : ''}`} aria-current={highlighted || undefined}>
+      <button ref={heading} className="record-heading" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="record-icon">
           <FileCheck2 size={18} />
         </span>

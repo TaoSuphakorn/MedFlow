@@ -24,6 +24,28 @@ export type Note = {
   createdAt: string;
   updatedAt: string;
   confirmedAt: string | null;
+  sectionReviews?: SectionReview[];
+  summarySentences?: SummarySentence[];
+};
+export type SummarySentence = { ordinal: number; text: string; sourceNoteIds: number[] };
+export type VitalField = 'systolic' | 'diastolic' | 'pulse' | 'temperatureC' | 'respiratoryRate' | 'spO2';
+export type VitalFlag = { field: VitalField; level: 'warning' | 'critical'; direction: 'high' | 'low' };
+export type VitalReading = {
+  id: number;
+  recordedAt: string;
+  systolic: number;
+  diastolic: number;
+  pulse: number;
+  temperatureC: number;
+  respiratoryRate: number;
+  spO2: number;
+  flags: VitalFlag[];
+};
+export type SectionReview = {
+  section: 'subjective' | 'objective' | 'assessment' | 'plan';
+  aiText: string;
+  reviewedBy: number | null;
+  reviewedAt: string | null;
 };
 export type Patient = {
   id: number;
